@@ -1,5 +1,5 @@
 # Skeleton rewritten bot for Python 3.10+
-# Reads settings including GEMINI_API_KEY by key=value.
+# Credit by @itsdzl
 # Supports:
 # - Welcome Text keren + bangga-banggain aa ijel saat di-start di Private Chat (PC)
 # - Auto-nimbrung sesekali di grup (Random reply)
@@ -31,14 +31,12 @@ NAME = cfg.get("name", "cajel")
 # ---------------------------------------------------------
 API_KEYS = []
 
-# 1. Cek dari kunci utama (Mendukung pemisah koma)
 if "GEMINI_API_KEY" in cfg:
     for key in cfg["GEMINI_API_KEY"].split(","):
         clean_key = key.strip()
         if clean_key:
             API_KEYS.append(clean_key)
 
-# 2. Cek dari kunci cadangan berangka (GEMINI_API_KEY_2, GEMINI_API_KEY_3, dst.)
 for i in range(2, 6):
     key_name = f"GEMINI_API_KEY_{i}"
     if key_name in cfg:
@@ -48,7 +46,6 @@ for i in range(2, 6):
 
 bot = AsyncTeleBot(TOKEN)
 
-# Fungsi untuk memanggil API Gemini menggunakan HTTP POST secara Asynchronous (Dengan Multi-API Key Failover)
 async def ask_gemini(prompt, user_name="User"):
     if not API_KEYS:
         return "Gemini belum aktif. API Key kosong di file settings."
@@ -63,7 +60,6 @@ async def ask_gemini(prompt, user_name="User"):
         f"Jawab dengan singkat, padat, sangat dinamis, kocak, kreatif, dan tidak kaku!"
     )
 
-    # Lakukan perulangan mencoba setiap API Key yang tersedia
     for idx, current_key in enumerate(API_KEYS):
         url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
         
@@ -72,7 +68,6 @@ async def ask_gemini(prompt, user_name="User"):
             "x-goog-api-key": current_key
         }
         
-        # PERBAIKAN BUG UTAMA: Menggunakan "system_instruction" (bukan systemInstruction)
         payload = {
             "contents": [{
                 "parts": [{"text": prompt}]
@@ -94,10 +89,8 @@ async def ask_gemini(prompt, user_name="User"):
                             res_json = await response.json()
                             return res_json['candidates'][0]['content']['parts'][0]['text']
                         
-                        # Baca body error untuk ditampilkan ke log Termux
                         error_body = await response.text()
                         
-                        # Jika server sibuk / limit (503 / 429), tunggu sebentar lalu coba kembali dengan key ini
                         if response.status in [503, 429, 500]:
                             if attempt < max_retries - 1:
                                 await asyncio.sleep(delay)
@@ -108,7 +101,6 @@ async def ask_gemini(prompt, user_name="User"):
                                 key_failed = True
                                 break
                                 
-                        # Jika kunci mati/tidak valid, langsung ganti ke key berikutnya tanpa retry
                         elif response.status in [401, 403, 400]:
                             print(f"[ROTASI] API Key {idx+1} Error {response.status} (Tidak Valid/Salah Format). Respon: {error_body}")
                             key_failed = True
@@ -165,7 +157,7 @@ async def allmsg(m):
         return
 
     # =========================================================
-    # 0. PERINTAH DEVELOPER (.eval) - KHUSUS OWNER
+    # 0. PERINTAH DEVELOPER (.eval) - KHUSUS IJELL
     # =========================================================
     if txt.startswith(".eval"):
         if m.from_user.id != OWNER_ID:
