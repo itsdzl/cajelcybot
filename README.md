@@ -5,11 +5,12 @@
 <img src="https://img.shields.io/badge/AI-Google%20Gemini-orange?style=for-the-badge&logo=google-gemini" alt="Google Gemini">
 <img src="https://img.shields.io/badge/Creator-aa%20ijel-red?style=for-the-badge" alt="Creator aa ijel">
 </p>
+
 Selamat datang di repositori resmi **Cajel Cybot**!
-Sebuah bot Telegram berbasis AI asinkron (AsyncTeleBot) yang ditenagai oleh model **Google Gemini 2.5-Flash**.
+Sebuah bot Telegram berbasis AI asinkron (AsyncTeleBot) yang ditenagai oleh model **Google Gemini 2.5-Flash.**
 
 Bot ini dirancang dengan kepribadian yang imut, lucu, sangat random, menggemaskan, sekaligus sedikit menyebalkan dan tengil!
-Bot ini diciptakan khusus oleh **aa ijel yang ganteng, imut, dan lucu banget tiada tanding**! 😎✨
+Bot ini diciptakan khusus oleh **aa ijel yang ganteng, imut, dan lucu banget tiada tanding! 😎✨**
 
 ## ✨ Fitur Unggulan
  * **🧠 Gemini AI Integration**
