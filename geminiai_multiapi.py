@@ -72,11 +72,12 @@ async def ask_gemini(prompt, user_name="User"):
             "x-goog-api-key": current_key
         }
         
+        # PERBAIKAN BUG UTAMA: Menggunakan "system_instruction" (bukan systemInstruction)
         payload = {
             "contents": [{
                 "parts": [{"text": prompt}]
             }],
-            "systemInstruction": {
+            "system_instruction": {
                 "parts": [{"text": system_instruction}]
             }
         }
@@ -93,24 +94,27 @@ async def ask_gemini(prompt, user_name="User"):
                             res_json = await response.json()
                             return res_json['candidates'][0]['content']['parts'][0]['text']
                         
-                        # Jika server sibuk / limit (503 / 429), kita tunggu sebentar lalu coba lagi dengan key ini
-                        elif response.status in [503, 429, 500]:
+                        # Baca body error untuk ditampilkan ke log Termux
+                        error_body = await response.text()
+                        
+                        # Jika server sibuk / limit (503 / 429), tunggu sebentar lalu coba kembali dengan key ini
+                        if response.status in [503, 429, 500]:
                             if attempt < max_retries - 1:
                                 await asyncio.sleep(delay)
                                 delay *= 2
                                 continue
                             else:
-                                print(f"[ROTASI] API Key indeks ke-{idx} gagal karena status {response.status}. Beralih ke Key berikutnya...")
+                                print(f"[ROTASI] API Key {idx+1} Gagal (status {response.status}). Respon: {error_body}")
                                 key_failed = True
                                 break
                                 
-                        # Jika kunci mati/tidak valid (401 / 403), langsung ganti ke key berikutnya tanpa retry
-                        elif response.status in [401, 403]:
-                            print(f"[ROTASI] API Key indeks ke-{idx} tidak valid/mati (status {response.status}). Langsung beralih ke Key berikutnya...")
+                        # Jika kunci mati/tidak valid, langsung ganti ke key berikutnya tanpa retry
+                        elif response.status in [401, 403, 400]:
+                            print(f"[ROTASI] API Key {idx+1} Error {response.status} (Tidak Valid/Salah Format). Respon: {error_body}")
                             key_failed = True
                             break
                         else:
-                            print(f"[ROTASI] Error API {response.status} pada Key indeks ke-{idx}. Beralih ke Key berikutnya...")
+                            print(f"[ROTASI] Error API {response.status} pada Key {idx+1}. Respon: {error_body}")
                             key_failed = True
                             break
             except Exception as e:
@@ -119,16 +123,13 @@ async def ask_gemini(prompt, user_name="User"):
                     delay *= 2
                     continue
                 else:
-                    print(f"[ROTASI] Koneksi Error pada Key indeks ke-{idx}: {str(e)}. Beralih ke Key berikutnya...")
+                    print(f"[ROTASI] Koneksi Error pada Key {idx+1}: {str(e)}")
                     key_failed = True
                     break
         
-        # Jika key saat ini sukses mengembalikan data, perulangan luar akan berhenti karena fungsi sudah me-return data.
-        # Jika key ini gagal, loop luar akan berlanjut ke API_KEYS berikutnya.
         if key_failed:
             continue
 
-    # Jika seluruh API Key yang dicoba dalam list habis dan semuanya gagal
     return "Aduh, semua API Key cadanganku lagi puyeng atau limit nih beb 🥺 Coba kirim pesan lagi nanti ya!"
 
 # =========================================================
