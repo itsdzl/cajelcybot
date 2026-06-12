@@ -26,10 +26,13 @@ Bot ini diciptakan khusus oleh **aa ijel yang ganteng, imut, dan lucu banget tia
  * **👑 Fitur Dewa (Owner Only)**
    * syuh — Perintah instan untuk mematikan sesi bot secara aman dari jarak jauh via chat.
    * .eval [kode_python] — Menjalankan script Python secara langsung di server secara asinkron dari dalam ruang obrolan Telegram.
+   
 ## 🚀 Panduan Instalasi (Termux / VPS)
 Ikuti langkah-langkah mudah di bawah ini untuk menjalankan Cajel Cybot di perangkat Anda:
+
 ### 1. Persiapan Awal & Clone Repo
 Pastikan Python 3.10+ sudah terpasang. Di Termux/VPS, jalankan perintah berikut:
+
 ```bash
 pkg update && pkg upgrade -y
 pkg install python git -y
@@ -37,6 +40,7 @@ pkg install python git -y
 ```
 ### 2. Install Library yang Dibutuhkan
 Bot ini berjalan sepenuhnya secara asinkron menggunakan pustaka pyTelegramBotAPI versi terbaru dan aiohttp untuk penanganan HTTP request berkecepatan tinggi:
+
 ```bash
 pip install pyTelegramBotAPI aiohttp
 
@@ -44,6 +48,7 @@ pip install pyTelegramBotAPI aiohttp
 ### 3. Konfigurasi File settings
 Buat sebuah file bernama settings di dalam direktori bot Anda dengan struktur key = value. Anda bisa memasukkan hingga 5 kunci API Gemini cadangan:
 **Format Berangka (Sangat Direkomendasikan):**
+
 ```text
 token = ISI_TOKEN_BOT_TELEGRAM_ANDA
 botname = @UsernameBotAnda
@@ -53,7 +58,9 @@ GEMINI_API_KEY_2 = KUNCI_GEMINI_CADANGAN_KEDUA
 GEMINI_API_KEY_3 = KUNCI_GEMINI_CADANGAN_KETIGA
 
 ```
+
 **Atau Format Satu Baris (Dipisah Koma):**
+
 ```text
 token = ISI_TOKEN_BOT_TELEGRAM_ANDA
 botname = @UsernameBotAnda
@@ -61,6 +68,7 @@ name = cajel
 GEMINI_API_KEY = KUNCI_UTAMA, KUNCI_CADANGAN_2, KUNCI_CADANGAN_3
 
 ```
+
 > 💡 *Dapatkan API Key Gemini secara gratis di Google AI Studio.*
 > 
 ### 4. Jalankan Bot!
