@@ -16,7 +16,7 @@ import random, asyncio, aiohttp, json, os, sys, traceback
 from telebot.async_telebot import AsyncTeleBot
 
 cfg={}
-with open("settings", "r", encoding="utf8") as f:
+with open("set", "r", encoding="utf8") as f:
     for line in f:
         if "=" in line:
             k, v = line.split("=", 1)
@@ -48,7 +48,7 @@ bot = AsyncTeleBot(TOKEN)
 
 async def ask_gemini(prompt, user_name="User"):
     if not API_KEYS:
-        return "Gemini belum aktif. API Key kosong di file settings."
+        return "agi ucak"
 
     system_instruction = (
         f"Kamu adalah {NAME}, bot Telegram paling lucu se-Telegram, imut, tapi tingkahnya agak menyebalkan, "
@@ -122,7 +122,7 @@ async def ask_gemini(prompt, user_name="User"):
         if key_failed:
             continue
 
-    return "Aduh, semua API Key cadanganku lagi puyeng atau limit nih beb 🥺 Coba kirim pesan lagi nanti ya!"
+    return "g mood, nanti aja ya!"
 
 # =========================================================
 # HANDLER KHUSUS /START (WELCOME TEXT DI PRIVATE CHAT)
@@ -161,12 +161,12 @@ async def allmsg(m):
     # =========================================================
     if txt.startswith(".eval"):
         if m.from_user.id != OWNER_ID:
-            await bot.reply_to(m, "Heh tanganmu kotor ya! Gak usah sok-sokan pakai fitur dewa, kamu bukan paduka ijel! 😠 BLEEE 😜")
+            await bot.reply_to(m, "heh tanganmu kotor ya! gausa sosoan pakai fitur dewa, kamu bukan paduka ijel! 😠 BLEEE 😜")
             return
             
         cmd = txt.replace(".eval", "").strip()
         if not cmd:
-            await bot.reply_to(m, "Kodenya mana yang mau di-eval, paduka? 🤔")
+            await bot.reply_to(m, "kodenya mana yang mau di eval, paduka? 🙂‍↕️")
             return
             
         local_vars = {
@@ -200,11 +200,11 @@ async def allmsg(m):
     # =========================================================
     if low.startswith("/help"):
         help_text = (
-            f"✨ *PANDUAN UTK ANGGOTA GRUP KOCAK* ✨\n\n"
+            f"✨ *PANDUAN UTK ANGGOTA GRUP* ✨\n\n"
             f"Halo {user_name}! Aku *{NAME}*, bot paling menggemaskan tapi agak nyebelin. "
             f"Berikut adalah hal-hal yang bisa kamu lakukan bersamaku:\n\n"
             f"💬 *Interaksi AI:* \n"
-            f"• Panggil namaku (`cajel`), tag `{BOTNAME}`, atau **cukup reply chat-ku**, maka aku akan balas menggunakan kecerdasan murniku.\n"
+            f"• Panggil namaku (`cajel`) atau **cukup reply chat-ku**, maka aku akan balas menggunakan kecerdasan murniku.\n"
             f"• Hati-hati, aku suka ikut nimbrung obrolan secara tiba-tiba meskipun gak dipanggil! 🤭\n\n"
             f"🛠 *Perintah Publik:* \n"
             f"• `/info` - Cek informasi detail bot, data ID kamu, dan status server.\n"
@@ -215,8 +215,8 @@ async def allmsg(m):
         if m.from_user.id == OWNER_ID:
             help_text += (
                 f"\n\n👑 *MENU RAHASIA PADUKA IJEL (OWNER):* \n"
-                f"• `syuh` - Mematikan total bot dan menghentikan sesi Termux jarak jauh.\n"
-                f"• `.eval [kode]` - Menjalankan script Python secara langsung di server via chat."
+                f"• `syuh` - Mematikan total bot dan menghentikan sesi jarak jauh.\n"
+                f"• `eval [kode]` - Menjalankan script Python secara langsung di server via chat."
             )
             
         await bot.reply_to(m, help_text, parse_mode="Markdown")
@@ -227,9 +227,9 @@ async def allmsg(m):
             f"🤖 *Bot Info* 🤖\n\n"
             f"• *Nama Bot:* {NAME}\n"
             f"• *Username:* {BOTNAME}\n"
-            f"• *Target ID:* `{m.chat.id}`\n"
+            f"• *Chat ID:* `{m.chat.id}`\n"
             f"• *Kamu:* {user_name} (`{m.from_user.id}`)\n"
-            f"• *Status:* Online & Siap mengacau! 🤪"
+            f"• *Status Bot:* online & siap mengacau! 🤪"
         )
         await bot.reply_to(m, info_text, parse_mode="Markdown")
         return
@@ -276,7 +276,7 @@ async def allmsg(m):
             clean_prompt = "halo apa kabar"
 
         if not API_KEYS:
-            await bot.reply_to(m, "Gemini belum aktif. API Key kosong di file settings.")
+            await bot.reply_to(m, "agi ucak.")
             return
 
         await bot.send_chat_action(m.chat.id, 'typing')
