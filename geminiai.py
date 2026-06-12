@@ -1,9 +1,11 @@
+```python
 # Skeleton rewritten bot for Python 3.10+
 # Reads settings including GEMINI_API_KEY by key=value.
 # Supports:
 # - Welcome Text keren + bangga-banggain aa ijel saat di-start di Private Chat (PC)
 # - Auto-nimbrung sesekali di grup (Random reply)
 # - Menjawab saat dipanggil/dimention via Gemini AI (Sadar kalau diciptain aa ijel)
+# - SISTEM REPLY: Cukup balas pesan bot di grup, bot akan otomatis menjawab!
 # - Kepribadian menyebalkan, lucu, imut, dan pakai kumpulan respons khas
 # - Fitur matikan bot via kata "syuh" khusus owner
 # - Perintah kegunaan: /info, /mock (mengejek), dan /help (daftar perintah)
@@ -42,7 +44,7 @@ async def ask_gemini(prompt, user_name="User"):
     system_instruction = (
         f"Kamu adalah {NAME}, bot Telegram paling lucu se-Telegram, imut, tapi tingkahnya agak menyebalkan, "
         f"tengil, suka mengejek dengan candaan, tapi tetap menggemaskan. Kamu sedang mengobrol dengan {user_name}. "
-        f"INGAT: Kamu diciptakan oleh aa ijel yang ganteng, imut, dan lucu banget tiada tanding! "
+        f"INGAT: Kamu diciptakan oleh aa ijel yang ganteng, imut, dan lucu banget tiada tanding "
         f"Jika ada yang bertanya siapa pembuatmu, siapa penciptamu, atau siapa owner-mu, puji aa ijel setinggi langit! "
         f"Gunakan gaya bahasa anak muda Indonesia gaul, santai, gunakan huruf kecil semua sesekali, "
         f"dan gunakan ekspresi seperti: {KATA_KHAS}. Jawab dengan singkat, padat, dan kocak. Jangan kaku!"
@@ -50,8 +52,11 @@ async def ask_gemini(prompt, user_name="User"):
     
     payload = {
         "contents": [{
-            "parts": [{"text": f"Context: {system_instruction}\nChat dari user: {prompt}"}]
-        }]
+            "parts": [{"text": prompt}]
+        }],
+        "systemInstruction": {
+            "parts": [{"text": system_instruction}]
+        }
     }
     
     try:
@@ -73,22 +78,19 @@ async def send_welcome(m):
     user_name = m.from_user.first_name
     
     if m.chat.type == "private":
-        # Menggunakan prefix r"" (raw string) agar Python tidak memunculkan invalid escape sequence warning
         welcome_message = (
-            rf"👋 *Halo {user_name}\!* Selamat datang di markas rahasia\! ✨" + "\n\n"
-            rf"Kenalin, aku *{NAME}* \(atau ketik `{BOTNAME}`\), bot paling imut, jenius, "
-            rf"dan pastinya agak menyebalkan se\-Telegram raya\. 😜☝️😋" + "\n\n"
-            rf"👑 Oh ya, fyi aja nih, aku diciptain sama *aa ijel yang ganteng dan imut lucu* tiada tanding\! Pokoknya penciptaku itu spek dewa deh, senggol dong\!\n\n"
-            rf"🎈 *Mau ngapain kita di sini?*\n"
-            rf"• Kamu bisa curhat, nanya hal random, atau sekadar adu bacot langsung sama aku di sini\. "
-            rf"Tinggal ketik aja pesannya, nanti otak AI\-ku yang urus\.\n"
-            rf"• Masukin aku ke grup kamu biar suasana grupnya makin rusuh dan seru\!\n\n"
-            rf"📜 Ketik `/help` untuk mengintip daftar mantra perintah yang bisa aku lakukan\. "
-            rf"Yuk, langsung chat aja, jangan sungkan\-sungkan\! Blweee 😜"
+            f"👋 *Halo {user_name}!* Selamat datang di markas rahasia! ✨\n\n"
+            f"Kenalin, aku *{NAME}*, bot paling imut, jenius,"
+            f"dan pastinya agak menyebalkan se telegram raya. 😜☝️😋\n\n"
+            f"👑 Oh ya, fyi aja nih, aku diciptain sama *aa ijel yang ganteng dan imut lucu* tiada tanding.. senggol dong😝\n\n"
+            f"• Kamu bisa curhat, nanya hal random, atau sekadar adu bacot langsung sama aku di sini.\n"
+            f"• Masukin aku ke grup kamu biar suasana grupnya makin rusuh dan seru wkwk\n\n"
+            f"📜 Ketik `/help` untuk mengintip daftar perintah yang bisa aku lakukan.\n"
+            f"Yuk, langsung chat aja, jangan sungkan-sungkan... Blweee 😜"
         )
-        await bot.reply_to(m, welcome_message, parse_mode="MarkdownV2")
+        await bot.reply_to(m, welcome_message, parse_mode="Markdown")
     else:
-        await bot.reply_to(m, "Ngapain start-start di grup? PC sini kalau berani! 😠")
+        await bot.reply_to(m, "Ngapain start-start di grup? PC sini kalau berani😠")
 
 @bot.message_handler(func=lambda m: True)
 async def allmsg(m):
@@ -144,26 +146,26 @@ async def allmsg(m):
     # =========================================================
     if low.startswith("/help"):
         help_text = (
-            rf"✨ *PANDUAN UTK ANGGOTA GRUP KOCAK* ✨" + "\n\n"
-            rf"Halo {user_name}! Aku *{NAME}*, bot paling menggemaskan tapi agak nyebelin. "
-            rf"Berikut adalah hal-hal yang bisa kamu lakukan bersamaku:\n\n"
-            rf"💬 *Interaksi AI:* \n"
-            rf"• Panggil namaku (`cajel`) atau tag `{BOTNAME}` di dalam chat, maka aku akan balas menggunakan kecerdasan murniku.\n"
-            rf"• Hati-hati, aku suka ikut nimbrung obrolan secara tiba-tiba meskipun gak dipanggil! 🤭\n\n"
-            rf"🛠 *Perintah Publik:* \n"
-            rf"• `/info` \- Cek informasi detail bot, data ID kamu, dan status server\.\n"
-            rf"• `/mock [teks]` \- Mengubah teks menjadi format ejekan Spongebob\. Bisa juga dipakai dengan membalas \(*reply*\) pesan teman lalu ketik `/mock`\.\n"
-            rf"• `/help` \- Menampilkan menu bantuan yang sedang kamu baca ini\."
+            f"✨ *PANDUAN UTK ANGGOTA GRUP KOCAK* ✨\n\n"
+            f"Halo {user_name}! Aku *{NAME}*, bot paling menggemaskan tapi agak nyebelin. "
+            f"Berikut adalah hal-hal yang bisa kamu lakukan bersamaku:\n\n"
+            f"💬 *Interaksi AI:* \n"
+            f"• Panggil namaku (`cajel`), tag `{BOTNAME}`, atau **cukup reply chat-ku**, maka aku akan balas menggunakan kecerdasan murniku.\n"
+            f"• Hati-hati, aku suka ikut nimbrung obrolan secara tiba-tiba meskipun gak dipanggil! 🤭\n\n"
+            f"🛠 *Perintah Publik:* \n"
+            f"• `/info` - Cek informasi detail bot, data ID kamu, dan status server.\n"
+            f"• `/mock [teks]` - Mengubah teks menjadi format ejekan Spongebob. Bisa juga dipakai dengan membalas (*reply*) pesan teman lalu ketik `/mock`.\n"
+            f"• `/help` - Menampilkan menu bantuan yang sedang kamu baca ini."
         )
         
         if m.from_user.id == OWNER_ID:
             help_text += (
-                rf"\n\n👑 *MENU RAHASIA PADUKA IJEL (OWNER):* \n"
-                rf"• `syuh` \- Mematikan total bot dan menghentikan sesi Termux jarak jauh\.\n"
-                rf"• `.eval [kode]` \- Menjalankan script Python secara langsung di server via chat\."
+                f"\n\n👑 *MENU RAHASIA PADUKA IJEL (OWNER):* \n"
+                f"• `syuh` - Mematikan total bot dan menghentikan sesi Termux jarak jauh.\n"
+                f"• `.eval [kode]` - Menjalankan script Python secara langsung di server via chat."
             )
             
-        await bot.reply_to(m, help_text, parse_mode="MarkdownV2")
+        await bot.reply_to(m, help_text, parse_mode="Markdown")
         return
 
     if low.startswith("/info"):
@@ -205,8 +207,16 @@ async def allmsg(m):
     # =========================================================
     # 3. LOGIKA RESPONS GEMINI AI (DIPANGGIL ATAU NIMBRUNG RANDOM)
     # =========================================================
-    dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low
-    nimbrung_random = (m.chat.type in ["group", "supergroup"]) and (random.random() < 0.05)
+    # Cek apakah pesan ini me-reply si bot itu sendiri
+    is_reply_to_bot = False
+    if m.reply_to_message and m.reply_to_message.from_user:
+        bot_info = await bot.get_me()
+        if m.reply_to_message.from_user.id == bot_info.id:
+            is_reply_to_bot = True
+
+    # Bot merespons jika: dichat privat, namanya disebut, username tag disebut, ATAU mereply si bot
+    dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low or is_reply_to_bot
+    nimbrung_random = (m.chat.type in ["group", "supergroup"]) and (random.random() < 0.75) and not is_reply_to_bot
 
     if dipanggil or nimbrung_random:
         clean_prompt = txt.replace("cajel", "").replace(BOTNAME, "").strip()
@@ -232,3 +242,6 @@ async def startup():
 
 if __name__ == "__main__":
     asyncio.run(startup())
+
+
+```
