@@ -5,24 +5,33 @@
 <img src="https://img.shields.io/badge/AI-Google%20Gemini-orange?style=for-the-badge&logo=google-gemini" alt="Google Gemini">
 <img src="https://img.shields.io/badge/Creator-aa%20ijel-red?style=for-the-badge" alt="Creator aa ijel">
 </p>
-Selamat datang di repositori resmi **Cajel Cybot**! Sebuah bot Telegram berbasis AI asinkron (AsyncTeleBot) yang ditenagai oleh model **Google Gemini 2.5-Flash**.
+Selamat datang di repositori resmi **Cajel Cybot**!
+Sebuah bot Telegram berbasis AI asinkron (AsyncTeleBot) yang ditenagai oleh model **Google Gemini 2.5-Flash**.
+
 Bot ini dirancang dengan kepribadian yang imut, lucu, sangat random, menggemaskan, sekaligus sedikit menyebalkan dan tengil!
 Bot ini diciptakan khusus oleh **aa ijel yang ganteng, imut, dan lucu banget tiada tanding**! 😎✨
+
 ## ✨ Fitur Unggulan
  * **🧠 Gemini AI Integration**
    Otak pintar Gemini 2.5-Flash dengan kepribadian super random, dinamis, ekspresif menggunakan emoji, dan suka mengobrol gaul.
+   
  * **🔄 Multi-API Key Rotation (Failover)**
    Fitur pertahanan ganda! Otomatis gonta-ganti API Key (maksimal hingga 5 kunci cadangan) jika salah satu key terkena limit kuota (*Error 429*), gangguan server (*Error 503*), atau tidak valid (*Error 401*).
+   
  * **💬 Sistem Chat Natural (Reply Mode)**
    Cukup balas (*reply*) pesan si Cajel di grup, dan dia akan otomatis membalas obrolan tanpa perlu mengetik pemicu/tag namanya lagi.
+   
  * **🎲 Auto-Nimbrung Random**
    Bot memiliki peluang acak sebesar 10% untuk ikut menyahut atau sok tahu mengomentari obrolan grup secara tiba-tiba biar suasana grup makin ramai! (Dioptimalkan agar hemat kuota).
+   
  * **📜 Dynamic Help Command**
    Menu /help yang mendeteksi peran pengguna secara langsung. Menampilkan perintah rahasia developer hanya jika diakses oleh sang Owner (aa ijel).
+   
  * **🛠️ Utilitas Publik & Hiburan**
    * /start — Sambutan hangat di Private Chat sekalian pamer ketampanan aa ijel.
    * /info — Informasi sistem, data Telegram ID Anda, dan status server.
    * /mock [teks] — Mengubah pesan menjadi format mOkInG tExT ejekan ala meme Spongebob (bisa digunakan via reply chat).
+     
  * **👑 Fitur Dewa (Owner Only)**
    * syuh — Perintah instan untuk mematikan sesi bot secara aman dari jarak jauh via chat.
    * .eval [kode_python] — Menjalankan script Python secara langsung di server secara asinkron dari dalam ruang obrolan Telegram.
