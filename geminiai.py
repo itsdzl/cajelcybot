@@ -135,10 +135,10 @@ async def allmsg(m):
         except Exception:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-            err_msg = "❌ *Error:* \n
-http://googleusercontent.com/immersive_entry_chip/0
+            err_msg = "❌ *Error:* \nhttp://googleusercontent.com/immersive_entry_chip/0
 
 ```"
+
             await bot.reply_to(m, err_msg, parse_mode="Markdown")
         return
 
