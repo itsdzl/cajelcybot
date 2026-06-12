@@ -3,14 +3,15 @@
 <img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python" alt="Python Version">
 <img src="https://img.shields.io/badge/Telegram-Bot%20API-blue?style=for-the-badge&logo=telegram" alt="Telegram Bot API">
 <img src="https://img.shields.io/badge/AI-Google%20Gemini-orange?style=for-the-badge&logo=google-gemini" alt="Google Gemini">
-<img src="https://img.shields.io/badge/Creator-aa%20ijel-red?style=for-the-badge" alt="Creator aa ijel">
+<img src="https://img.shields.io/badge/Creator-aa%20ijel-red?style=for-the-badge" alt="t.me/niskalaaksa">
 </p>
 
 Selamat datang di repositori resmi **Cajel Cybot**!
 Sebuah bot Telegram berbasis AI asinkron (AsyncTeleBot) yang ditenagai oleh model **Google Gemini 2.5-Flash.**
 
 Bot ini dirancang dengan kepribadian yang imut, lucu, sangat random, menggemaskan, sekaligus sedikit menyebalkan dan tengil!
-Bot ini diciptakan khusus oleh **aa ijel yang ganteng, imut, dan lucu banget tiada tanding! 😎✨**
+
+Bot ini diciptakan khusus oleh **AA IJEL YANG GANTENG, IMUT, DAN LUCU BANGET TIADA TANDING! 😎✨**
 
 ## ✨ Fitur Unggulan
  * **🧠 Gemini AI Integration**
@@ -99,6 +100,6 @@ Ketika bot mendeteksi adanya error pengiriman pesan ke Google AI Studio, bot aka
    [ROTASI] API Key 1 Gagal Quota/Limit (status 429). Info: Quota exceeded...
  3. Bot akan **otomatis beralih menggunakan API Key cadangan berikutnya** (Key 2, Key 3, dst.) tanpa menghentikan sesi atau mengganggu kenyamanan pengguna di grup Telegram.
 ## 🤝 Kontribusi & Hak Cipta
- * Pencipta & Pengembang Utama: **aa ijel yang ganteng, imut, dan lucu** (Owner ID: 8278748114).
+ * Pencipta & Pengembang Utama: **Aa Ijel Yang Ganteng, Imut, Dan Lucu**.
  * Menggunakan Model AI: **Google Gemini-2.5-Flash API**.
-*Dibuat dengan cinta (dan sedikit ketengilan) oleh aa ijel untuk komunitas Telegram Indonesia.* 🤍
+*Dibuat dengan cinta (dan sedikit ketengilan) oleh AA IJEL untuk Kalian Entah SIAPAA.* 🤍
