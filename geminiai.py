@@ -5,7 +5,8 @@
 # - Auto-nimbrung sesekali di grup (Random reply)
 # - Menjawab saat dipanggil/dimention via Gemini AI (Sadar kalau diciptain aa ijel)
 # - SISTEM REPLY: Cukup balas pesan bot di grup, bot akan otomatis menjawab!
-# - Kepribadian menyebalkan, lucu, imut, dan pakai kumpulan respons khas
+# - Jauh Lebih Tangguh: Auto-Retry (Exponential Backoff) jika server Google 503/429/500!
+# - Kepribadian menyebalkan, lucu, imut, super random, dan menggemaskan
 # - Fitur matikan bot via kata "syuh" khusus owner
 # - Perintah kegunaan: /info, /mock (mengejek), dan /help (daftar perintah)
 # - Perintah developer: .eval [kode] khusus OWNER_ID
@@ -27,10 +28,7 @@ API_KEY = cfg["GEMINI_API_KEY"]
 
 bot = AsyncTeleBot(TOKEN)
 
-# Kumpulan ekspresi & gaya ketikan lucu untuk disuntikkan ke prompt Gemini
-KATA_KHAS = "Hah? manggil aku? 🤭, Iya? Ada apa?, Hehe hadir!, Cajel online~, apaci manggil manggil😠, apa sayang... sjsiejdhdofj, hehe☝️😋"
-
-# Fungsi untuk memanggil API Gemini menggunakan HTTP POST secara Asynchronous
+# Fungsi untuk memanggil API Gemini menggunakan HTTP POST secara Asynchronous (Dengan Auto-Retry Tangguh)
 async def ask_gemini(prompt, user_name="User"):
     clean_key = API_KEY.strip() 
     url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
@@ -43,10 +41,11 @@ async def ask_gemini(prompt, user_name="User"):
     system_instruction = (
         f"Kamu adalah {NAME}, bot Telegram paling lucu se-Telegram, imut, tapi tingkahnya agak menyebalkan, "
         f"tengil, suka mengejek dengan candaan, tapi tetap menggemaskan. Kamu sedang mengobrol dengan {user_name}. "
-        f"INGAT: Kamu diciptakan oleh aa ijel yang ganteng, imut, dan lucu banget tiada tanding "
-        f"Jika ada yang bertanya siapa pembuatmu, siapa penciptamu, atau siapa owner-mu, puji aa ijel setinggi langit! "
+        f"INGAT: Kamu diciptakan oleh aa ijel yang ganteng, imut, dan lucu banget tiada tanding! "
+        f"Jika ada yang bertanya siapa pembuatmu, siapa penciptamu, atau siapa owner-mu, puji aa ijel setinggi langit dengan heboh! "
         f"Gunakan gaya bahasa anak muda Indonesia gaul, santai, gunakan huruf kecil semua sesekali, "
-        f"dan gunakan ekspresi seperti: {KATA_KHAS}. Jawab dengan singkat, padat, dan kocak. Jangan kaku!"
+        f"dan gunakan ekspresi emoji lucu secara beragam dan bebas (seperti: 🤭, 😠, 😜, ☝️😋, 🥺, 🥰, 😜, 🙄) biar terasa hidup dan tidak monoton. "
+        f"Jawab dengan singkat, padat, sangat dinamis, kocak, kreatif, dan tidak kaku!"
     )
     
     payload = {
@@ -58,16 +57,34 @@ async def ask_gemini(prompt, user_name="User"):
         }
     }
     
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=headers, json=payload, timeout=15) as response:
-                if response.status == 200:
-                    res_json = await response.json()
-                    return res_json['candidates'][0]['content']['parts'][0]['text']
-                else:
-                    return f"Error API ({response.status})"
-    except Exception as e:
-        return f"Koneksi Error: {str(e)}"
+    # Fitur Auto-Retry (Mencoba hingga 3 kali dengan jeda jika server Google sibuk/503)
+    max_retries = 3
+    delay = 1  # Detik jeda awal
+    
+    for attempt in range(max_retries):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, headers=headers, json=payload, timeout=15) as response:
+                    if response.status == 200:
+                        res_json = await response.json()
+                        return res_json['candidates'][0]['content']['parts'][0]['text']
+                    
+                    # Jika kena limit atau server Google sedang sibuk (503/429/500), kita lakukan retry
+                    elif response.status in [503, 429, 500]:
+                        if attempt < max_retries - 1:
+                            await asyncio.sleep(delay)
+                            delay *= 2  # Jeda naik (Exponential backoff)
+                            continue
+                        else:
+                            return "Aduh, server Google Gemini lagi puyeng/overload nih beb 🥺 Coba kirim pesan lagi semenit lagi ya! (Error 503)"
+                    else:
+                        return f"Error API ({response.status})"
+        except Exception as e:
+            if attempt < max_retries - 1:
+                await asyncio.sleep(delay)
+                delay *= 2
+                continue
+            return f"Koneksi Error: {str(e)}"
 
 # =========================================================
 # HANDLER KHUSUS /START (WELCOME TEXT DI PRIVATE CHAT)
@@ -80,8 +97,8 @@ async def send_welcome(m):
         welcome_message = (
             f"👋 *Halo {user_name}!* Selamat datang di markas rahasia! ✨\n\n"
             f"Kenalin, aku *{NAME}*, bot paling imut, jenius,"
-            f"dan pastinya agak menyebalkan se telegram raya. 😜☝️😋\n\n"
-            f"👑 Oh ya, fyi aja nih, aku diciptain sama *aa ijel yang ganteng dan imut lucu* tiada tanding.. senggol dong😝\n\n"
+            f"dan pastinya agak menyebalkan se-Telegram raya. 😜☝️😋\n\n"
+            f"👑 Oh ya, fyi aja nih, aku diciptain sama *aa ijel yang ganteng dan imut lucu* tiada tanding.. senggol dong 😝\n\n"
             f"• Kamu bisa curhat, nanya hal random, atau sekadar adu bacot langsung sama aku di sini.\n"
             f"• Masukin aku ke grup kamu biar suasana grupnya makin rusuh dan seru wkwk\n\n"
             f"📜 Ketik `/help` untuk mengintip daftar perintah yang bisa aku lakukan.\n"
@@ -89,7 +106,7 @@ async def send_welcome(m):
         )
         await bot.reply_to(m, welcome_message, parse_mode="Markdown")
     else:
-        await bot.reply_to(m, "Ngapain start-start di grup? PC sini kalau berani😠")
+        await bot.reply_to(m, "Ngapain start-start di grup? PC sini kalau berani 😠")
 
 @bot.message_handler(func=lambda m: True)
 async def allmsg(m):
@@ -206,7 +223,6 @@ async def allmsg(m):
     # =========================================================
     # 3. LOGIKA RESPONS GEMINI AI (DIPANGGIL ATAU NIMBRUNG RANDOM)
     # =========================================================
-    # Cek apakah pesan ini me-reply si bot itu sendiri
     is_reply_to_bot = False
     if m.reply_to_message and m.reply_to_message.from_user:
         bot_info = await bot.get_me()
@@ -241,5 +257,3 @@ async def startup():
 
 if __name__ == "__main__":
     asyncio.run(startup())
-
-
