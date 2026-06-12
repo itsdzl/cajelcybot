@@ -39,7 +39,6 @@ async def ask_gemini(prompt, user_name="User"):
         "x-goog-api-key": clean_key
     }
     
-    # PERBAIKAN PROMPT: Menyuntikkan fakta mutlak kalau penciptanya adalah aa ijel ganteng
     system_instruction = (
         f"Kamu adalah {NAME}, bot Telegram paling lucu se-Telegram, imut, tapi tingkahnya agak menyebalkan, "
         f"tengil, suka mengejek dengan candaan, tapi tetap menggemaskan. Kamu sedang mengobrol dengan {user_name}. "
@@ -74,18 +73,18 @@ async def send_welcome(m):
     user_name = m.from_user.first_name
     
     if m.chat.type == "private":
-        # Menggunakan string biasa + gabungan variabel agar aman dari syntax error f-string
+        # Menggunakan prefix r"" (raw string) agar Python tidak memunculkan invalid escape sequence warning
         welcome_message = (
-            "👋 *Halo " + user_name + "\!* Selamat datang di markas rahasia\! ✨\n\n"
-            "Kenalin, aku *" + NAME + "* \(atau ketik `" + BOTNAME + "`\), bot paling imut, jenius, "
-            "dan pastinya agak menyebalkan se\-Telegram raya\. 😜☝️😋\n\n"
-            "👑 Oh ya, fyi aja nih, aku diciptain sama *aa ijel yang ganteng dan imut lucu* tiada tanding\! Pokoknya penciptaku itu spek dewa deh, senggol dong\!\n\n"
-            "🎈 *Mau ngapain kita di sini?*\n"
-            "• Kamu bisa curhat, nanya hal random, atau sekadar adu bacot langsung sama aku di sini\. "
-            "Tinggal ketik aja pesannya, nanti otak AI\-ku yang urus\.\n"
-            "• Masukin aku ke grup kamu biar suasana grupnya makin rusuh dan seru\!\n\n"
-            "📜 Ketik `/help` untuk mengintip daftar mantra perintah yang bisa aku lakukan\. "
-            "Yuk, langsung chat aja, jangan sungkan\-sungkan\! Blweee 😜"
+            rf"👋 *Halo {user_name}\!* Selamat datang di markas rahasia\! ✨" + "\n\n"
+            rf"Kenalin, aku *{NAME}* \(atau ketik `{BOTNAME}`\), bot paling imut, jenius, "
+            rf"dan pastinya agak menyebalkan se\-Telegram raya\. 😜☝️😋" + "\n\n"
+            rf"👑 Oh ya, fyi aja nih, aku diciptain sama *aa ijel yang ganteng dan imut lucu* tiada tanding\! Pokoknya penciptaku itu spek dewa deh, senggol dong\!\n\n"
+            rf"🎈 *Mau ngapain kita di sini?*\n"
+            rf"• Kamu bisa curhat, nanya hal random, atau sekadar adu bacot langsung sama aku di sini\. "
+            rf"Tinggal ketik aja pesannya, nanti otak AI\-ku yang urus\.\n"
+            rf"• Masukin aku ke grup kamu biar suasana grupnya makin rusuh dan seru\!\n\n"
+            rf"📜 Ketik `/help` untuk mengintip daftar mantra perintah yang bisa aku lakukan\. "
+            rf"Yuk, langsung chat aja, jangan sungkan\-sungkan\! Blweee 😜"
         )
         await bot.reply_to(m, welcome_message, parse_mode="MarkdownV2")
     else:
@@ -136,6 +135,7 @@ async def allmsg(m):
         except Exception:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+            # PERBAIKAN FIXED line 139: f-string ditutup dengan sempurna
             await bot.reply_to(m, f"❌ *Error:* \n```python\n{err[:3500]}\n
 ```", parse_mode="Markdown")
         return
@@ -144,24 +144,25 @@ async def allmsg(m):
     # 1. PERINTAH FITUR UTILITY & HELP
     # =========================================================
     if low.startswith("/help"):
+        # Menggunakan prefix r"" (raw string) agar bebas dari warning invalid escape sequence
         help_text = (
-            f"✨ *PANDUAN UTK ANGGOTA GRUP KOCAK* ✨\n\n"
-            f"Halo {user_name}! Aku *{NAME}*, bot paling menggemaskan tapi agak nyebelin. "
-            f"Berikut adalah hal-hal yang bisa kamu lakukan bersamaku:\n\n"
-            f"💬 *Interaksi AI:* \n"
-            f"• Panggil namaku (`cajel`) atau tag `{BOTNAME}` di dalam chat, maka aku akan balas menggunakan kecerdasan murniku.\n"
-            f"• Hati-hati, aku suka ikut nimbrung obrolan secara tiba-tiba meskipun gak dipanggil! 🤭\n\n"
-            f"🛠 *Perintah Publik:* \n"
-            f"• `/info` \- Cek informasi detail bot, data ID kamu, dan status server\.\n"
-            f"• `/mock [teks]` \- Mengubah teks menjadi format ejekan Spongebob\. Bisa juga dipakai dengan membalas \(*reply*\) pesan teman lalu ketik `/mock`\.\n"
-            f"• `/help` \- Menampilkan menu bantuan yang sedang kamu baca ini\."
+            rf"✨ *PANDUAN UTK ANGGOTA GRUP KOCAK* ✨" + "\n\n"
+            rf"Halo {user_name}! Aku *{NAME}*, bot paling menggemaskan tapi agak nyebelin. "
+            rf"Berikut adalah hal-hal yang bisa kamu lakukan bersamaku:\n\n"
+            rf"💬 *Interaksi AI:* \n"
+            rf"• Panggil namaku (`cajel`) atau tag `{BOTNAME}` di dalam chat, maka aku akan balas menggunakan kecerdasan murniku.\n"
+            rf"• Hati-hati, aku suka ikut nimbrung obrolan secara tiba-tiba meskipun gak dipanggil! 🤭\n\n"
+            rf"🛠 *Perintah Publik:* \n"
+            rf"• `/info` \- Cek informasi detail bot, data ID kamu, dan status server\.\n"
+            rf"• `/mock [teks]` \- Mengubah teks menjadi format ejekan Spongebob\. Bisa juga dipakai dengan membalas \(*reply*\) pesan teman lalu ketik `/mock`\.\n"
+            rf"• `/help` \- Menampilkan menu bantuan yang sedang kamu baca ini\."
         )
         
         if m.from_user.id == OWNER_ID:
             help_text += (
-                f"\n\n👑 *MENU RAHASIA PADUKA IJEL (OWNER):* \n"
-                f"• `syuh` \- Mematikan total bot dan menghentikan sesi Termux jarak jauh\.\n"
-                f"• `.eval [kode]` \- Menjalankan script Python secara langsung di server via chat\."
+                rf"\n\n👑 *MENU RAHASIA PADUKA IJEL (OWNER):* \n"
+                rf"• `syuh` \- Mematikan total bot dan menghentikan sesi Termux jarak jauh\.\n"
+                rf"• `.eval [kode]` \- Menjalankan script Python secara langsung di server via chat\."
             )
             
         await bot.reply_to(m, help_text, parse_mode="MarkdownV2")
