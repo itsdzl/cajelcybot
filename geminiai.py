@@ -74,18 +74,18 @@ async def send_welcome(m):
     user_name = m.from_user.first_name
     
     if m.chat.type == "private":
-        # Welcome text baru yang sudah dibumbui pujian untuk aa ijel
+        # Menggunakan string biasa + gabungan variabel agar aman dari syntax error f-string
         welcome_message = (
-            f"👋 *Halo {user_name}\!* Selamat datang di markas rahasia\! ✨\n\n"
-            f"Kenalin, aku *{NAME}* \(atau ketik `{BOTNAME}`\), bot paling imut, jenius, "
-            f"dan pastinya agak menyebalkan se\-Telegram raya\. 😜☝️😋\n\n"
-            f"👑 Oh ya, fyi aja nih, aku diciptain sama *aa ijel yang ganteng dan imut lucu* tiada tanding\! Pokoknya penciptaku itu spek dewa deh, senggol dong\!\n\n"
-            f"🎈 *Mau ngapain kita di sini?*\n"
-            f"• Kamu bisa curhat, nanya hal random, atau sekadar adu bacot langsung sama aku di sini\. "
-            f"Tinggal ketik aja pesannya, nanti otak AI\-ku yang urus\.\n"
-            f"• Masukin aku ke grup kamu biar suasana grupnya makin rusuh dan seru\!\n\n"
-            f"📜 Ketik `/help` untuk mengintip daftar mantra perintah yang bisa aku lakukan\. "
-            f"Yuk, langsung chat aja, jangan sungkan\-sungkan\! Blweee 😜"
+            "👋 *Halo " + user_name + "\!* Selamat datang di markas rahasia\! ✨\n\n"
+            "Kenalin, aku *" + NAME + "* \(atau ketik `" + BOTNAME + "`\), bot paling imut, jenius, "
+            "dan pastinya agak menyebalkan se\-Telegram raya\. 😜☝️😋\n\n"
+            "👑 Oh ya, fyi aja nih, aku diciptain sama *aa ijel yang ganteng dan imut lucu* tiada tanding\! Pokoknya penciptaku itu spek dewa deh, senggol dong\!\n\n"
+            "🎈 *Mau ngapain kita di sini?*\n"
+            "• Kamu bisa curhat, nanya hal random, atau sekadar adu bacot langsung sama aku di sini\. "
+            "Tinggal ketik aja pesannya, nanti otak AI\-ku yang urus\.\n"
+            "• Masukin aku ke grup kamu biar suasana grupnya makin rusuh dan seru\!\n\n"
+            "📜 Ketik `/help` untuk mengintip daftar mantra perintah yang bisa aku lakukan\. "
+            "Yuk, langsung chat aja, jangan sungkan\-sungkan\! Blweee 😜"
         )
         await bot.reply_to(m, welcome_message, parse_mode="MarkdownV2")
     else:
