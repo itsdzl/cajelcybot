@@ -1,4 +1,3 @@
-```python
 # Skeleton rewritten bot for Python 3.10+
 # Reads settings including GEMINI_API_KEY by key=value.
 # Supports:
@@ -244,4 +243,3 @@ if __name__ == "__main__":
     asyncio.run(startup())
 
 
-```
