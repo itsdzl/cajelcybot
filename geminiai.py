@@ -135,16 +135,16 @@ async def allmsg(m):
         except Exception:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-            # PERBAIKAN FIXED line 139: f-string ditutup dengan sempurna
-            await bot.reply_to(m, f"❌ *Error:* \n```python\n{err[:3500]}\n
-```", parse_mode="Markdown")
+            # PERBAIKAN TOTAL: Memakai penggabungan string biasa agar aman dari f-string newline error
+            err_msg = "❌ *Error:* \n```python\n" + str(err[:3500]) + "\n
+```"
+            await bot.reply_to(m, err_msg, parse_mode="Markdown")
         return
 
     # =========================================================
     # 1. PERINTAH FITUR UTILITY & HELP
     # =========================================================
     if low.startswith("/help"):
-        # Menggunakan prefix r"" (raw string) agar bebas dari warning invalid escape sequence
         help_text = (
             rf"✨ *PANDUAN UTK ANGGOTA GRUP KOCAK* ✨" + "\n\n"
             rf"Halo {user_name}! Aku *{NAME}*, bot paling menggemaskan tapi agak nyebelin. "
