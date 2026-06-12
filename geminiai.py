@@ -132,14 +132,12 @@ async def allmsg(m):
                 result = eval(cmd, globals(), local_vars)
                 
             await bot.reply_to(m, f"💡 *Result:* \n`{result}`", parse_mode="Markdown")
-        except Exception:
+                except Exception:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-            err_msg = "❌ *Error:* \nhttp://googleusercontent.com/immersive_entry_chip/0
-
-```"
-
-            await bot.reply_to(m, err_msg, parse_mode="Markdown")
+            # Format sederhana tanpa tanda kutip ganda/tunggal yang rentan rusak di HP
+            err_msg = "❌ Error: \n" + str(err[:1000])
+            await bot.reply_to(m, err_msg)
         return
 
     # =========================================================
