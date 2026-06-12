@@ -5,10 +5,11 @@
 # - random "cajel" replies
 # - startup greeting
 # - Gemini via HTTP REST API (No Google-GenAI library required!)
+# - Fitur "fuckoff" untuk mematikan bot & sesi Termux jarak jauh[span_0](start_span)[span_0](end_span)
 #
 # NOTE: Fill in further custom behaviour as needed.
 
-import random, asyncio, aiohttp, json
+import random, asyncio, aiohttp, json, os
 from telebot.async_telebot import AsyncTeleBot
 
 cfg={}
@@ -21,7 +22,7 @@ with open("settings", "r", encoding="utf8") as f:
 TOKEN = cfg["token"]
 BOTNAME = cfg["botname"]
 NAME = cfg.get("name", "cajel")
-API_KEY = cfg["GEMINI_API_KEY"]
+API_KEY = cfg.get("GEMINI_API_KEY", "")
 
 bot = AsyncTeleBot(TOKEN)
 
@@ -30,15 +31,15 @@ RANDOM_CAJEL = [
     "Iya? Ada apa?",
     "Hehe hadir!",
     "Cajel online~"
+    "apaci manggil manggil😠"
+    "apa sayang... sjsiejdhdofj"
 ]
 
 # Fungsi untuk memanggil API Gemini menggunakan HTTP POST secara Asynchronous
 async def ask_gemini(prompt):
-    # Menggunakan model gemini-1.5-flash karena sangat stabil untuk endpoint REST API gratisan
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
     headers = {"Content-Type": "application/json"}
     
-    # Format payload instruksi sesuai dengan sistem kustomisasi karakter bot Anda
     payload = {
         "contents": [{
             "parts": [{"text": f"aku adalah {NAME}, bot tele paling imut, bagi duit donkkk 😸🫴🏻 {prompt}"}]
@@ -48,20 +49,31 @@ async def ask_gemini(prompt):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=payload, timeout=15) as response:
-                if response.status_code == 200:
+                if response.status == 200:
                     res_json = await response.json()
-                    # Parsing struktur JSON balasan dari Google
                     return res_json['candidates'][0]['content']['parts'][0]['text']
                 else:
                     err_text = await response.text()
-                    return f"Error API ({response.status_code}): {err_text[:100]}"
+                    return f"Error API ({response.status}): {err_text[:100]}"
     except Exception as e:
         return f"Koneksi Error: {str(e)}"
 
 @bot.message_handler(func=lambda m: True)
 async def allmsg(m):
     txt = m.text or ""
-    low = txt.lower()
+    low = txt.lower().strip()
+
+    OWNER_ID = 8278748114 
+
+    if low == "fuckoff":
+        if m.from_user.id == OWNER_ID:
+            await bot.reply_to(m, "ih jahat dimatiin 🥹")
+            await asyncio.sleep(1)
+            os._exit(0)
+        else:
+            await bot.reply_to(m, "kamu bukan paduka ijel, kamu gabisa matiin aku!")
+
+    # =========================================================
 
     if low == "cajel":
         await bot.reply_to(m, random.choice(RANDOM_CAJEL))
@@ -76,10 +88,7 @@ async def allmsg(m):
             await bot.reply_to(m, "Gemini belum aktif. API Key kosong di file settings.")
             return
 
-        # Indikator bot sedang mengetik di Telegram biar terasa interaktif
         await bot.send_chat_action(m.chat.id, 'typing')
-        
-        # Memanggil fungsi Gemini HTTP alternatif kita
         jawaban = await ask_gemini(q)
         await bot.reply_to(m, jawaban)
 
@@ -90,4 +99,4 @@ async def startup():
 
 if __name__ == "__main__":
     asyncio.run(startup())
-  
+    
