@@ -2,6 +2,6 @@
 
 while true
 do
-python3.8 chat_gpt_gemini.py
+python3.10 chat_gpt_gemini_recode.py
 sleep 72
 done
