@@ -30,9 +30,9 @@ RANDOM_CAJEL = [
     "Hah? manggil aku? 🤭",
     "Iya? Ada apa?",
     "Hehe hadir!",
-    "Cajel online~"
-    "apaci manggil manggil😠"
-    "apa sayang... sjsiejdhdofj"
+    "Cajel online~",
+    "apaci manggil manggil😠",
+    "apa sayang... sjsiejdhdofj",
 ]
 
 # Fungsi untuk memanggil API Gemini menggunakan HTTP POST secara Asynchronous (Mendukung API Key Format Baru AQ.)
@@ -49,7 +49,7 @@ async def ask_gemini(prompt):
     
     payload = {
         "contents": [{
-            "parts": [{"text": f"Kamu adalah {NAME}, bot Telegram lucu. Jawab singkat bahasa Indonesia. {prompt}"}]
+            "parts": [{"text": f"aku adalah {NAME}, bot tele paling lucu se tele hehe☝️😋 {prompt}"}]
         }]
     }
     
@@ -72,7 +72,7 @@ async def allmsg(m):
 
     OWNER_ID = 8278748114 
 
-    if low == "fuckoff":
+    if low == "syuh":
         if m.from_user.id == OWNER_ID:
             await bot.reply_to(m, "ih jahat dimatiin 🥹")
             await asyncio.sleep(1)
