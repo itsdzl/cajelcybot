@@ -39,10 +39,9 @@ RANDOM_CAJEL = [
 async def ask_gemini(prompt):
     clean_key = API_KEY.strip() 
     
-    # URL sekarang bersih, tidak perlu menempelkan ?key= di ujungnya
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+    # UPDATE: Menggunakan model gemini-2.5-flash (bukan 1.5 lagi)
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
     
-    # PERBAIKAN: API Key format baru (AQ.) wajib dikirimkan lewat HEADER x-goog-api-key
     headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": clean_key
