@@ -276,7 +276,7 @@ async def allmsg(m):
             is_reply_to_bot = True
 
     dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low or is_reply_to_bot
-    nimbrung_random = (m.chat.type in ["group", "supergroup"]) and (random.random() < 0.75) and not is_reply_to_bot
+    nimbrung_random = (m.chat.type in ["group", "supergroup"]) and (random.random() < 0.10) and not is_reply_to_bot
 
     if dipanggil or nimbrung_random:
         clean_prompt = txt.replace("cajel", "").replace(BOTNAME, "").strip()
