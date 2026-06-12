@@ -22,7 +22,7 @@ with open("settings", "r", encoding="utf8") as f:
 TOKEN = cfg["token"]
 BOTNAME = cfg["botname"]
 NAME = cfg.get("name", "cajel")
-API_KEY = cfg.get("GEMINI_API_KEY", "")
+API_KEY = cfg["GEMINI_API_KEY"]
 
 bot = AsyncTeleBot(TOKEN)
 
@@ -35,14 +35,22 @@ RANDOM_CAJEL = [
     "apa sayang... sjsiejdhdofj"
 ]
 
-# Fungsi untuk memanggil API Gemini menggunakan HTTP POST secara Asynchronous
+# Fungsi untuk memanggil API Gemini menggunakan HTTP POST secara Asynchronous (Mendukung API Key Format Baru AQ.)
 async def ask_gemini(prompt):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
-    headers = {"Content-Type": "application/json"}
+    clean_key = API_KEY.strip() 
+    
+    # URL sekarang bersih, tidak perlu menempelkan ?key= di ujungnya
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+    
+    # PERBAIKAN: API Key format baru (AQ.) wajib dikirimkan lewat HEADER x-goog-api-key
+    headers = {
+        "Content-Type": "application/json",
+        "x-goog-api-key": clean_key
+    }
     
     payload = {
         "contents": [{
-            "parts": [{"text": f"aku adalah {NAME}, bot tele paling imut, bagi duit donkkk 😸🫴🏻 {prompt}"}]
+            "parts": [{"text": f"Kamu adalah {NAME}, bot Telegram lucu. Jawab singkat bahasa Indonesia. {prompt}"}]
         }]
     }
     
@@ -54,7 +62,7 @@ async def ask_gemini(prompt):
                     return res_json['candidates'][0]['content']['parts'][0]['text']
                 else:
                     err_text = await response.text()
-                    return f"Error API ({response.status}): {err_text[:100]}"
+                    return f"Error API ({response.status}): {err_text[:150]}"
     except Exception as e:
         return f"Koneksi Error: {str(e)}"
 
