@@ -25,10 +25,10 @@ NAME=cfg.get("name","cajel")
 bot=AsyncTeleBot(TOKEN)
 
 RANDOM_CAJEL=[
-"Hah? manggil aku? 🤭",
-"Iya? Ada apa?",
-"Hehe hadir!",
-"Cajel online~"
+"hah? manggil aku? 🤭",
+"iya? ada apa?",
+"hehe hadir!",
+"cajel dicinii~"
 ]
 
 try:
@@ -54,14 +54,14 @@ async def allmsg(m):
             try:
                 r=client.models.generate_content(
                     model="gemini-2.5-flash",
-                    contents=f"Kamu adalah {NAME}, bot Telegram lucu. Jawab singkat bahasa Indonesia. {q}"
+                    contents=f"aku {NAME}, bot tele paling lucu. minta duit donk 😸🫴🏻. {q}"
                 )
                 await bot.reply_to(m,r.text)
                 return
             except Exception as e:
-                await bot.reply_to(m,"Gemini error: "+str(e))
+                await bot.reply_to(m,"gemini error: "+str(e))
                 return
-        await bot.reply_to(m,"Gemini belum aktif.")
+        await bot.reply_to(m,"gemini belum aktif.")
 
 async def startup():
     me=await bot.get_me()
