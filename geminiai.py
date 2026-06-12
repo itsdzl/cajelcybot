@@ -132,12 +132,13 @@ async def allmsg(m):
                 result = eval(cmd, globals(), local_vars)
                 
             await bot.reply_to(m, f"💡 *Result:* \n`{result}`", parse_mode="Markdown")
-        except Exception:
+                except Exception:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-            # PERBAIKAN TOTAL: Memakai penggabungan string biasa agar aman dari f-string newline error
-            err_msg = "❌ *Error:* \n```python\n" + str(err[:3500]) + "\n
+            err_msg = "❌ *Error:* \n
+http://googleusercontent.com/immersive_entry_chip/0
 ```"
+
             await bot.reply_to(m, err_msg, parse_mode="Markdown")
         return
 
