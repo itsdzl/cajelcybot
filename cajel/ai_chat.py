@@ -55,7 +55,7 @@ def setup(bot, data):
                 await data["send_log"](f"🔌 *[ROTASI]* Koneksi Timeout pada Key {idx+1}: `{str(e)}`")
         
         if chat_memories[chat_id]: chat_memories[chat_id].pop()
-        return "g mood, nanti aja y.."
+        return "AI cajel lagi off 🥹, tapi nanti balik lagii kok.. hiksrot"
 
     @bot.message_handler(func=lambda m: True)
     async def handle_ai_chat(m):
