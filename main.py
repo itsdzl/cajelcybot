@@ -1,4 +1,4 @@
-import os, sys, asyncio, shutil, importlib
+import os, sys, asyncio, shutil, importlib, json
 import telebot
 from telebot.async_telebot import AsyncTeleBot
 
@@ -13,7 +13,8 @@ with open("set", "r", encoding="utf8") as f:
 TOKEN = cfg["token"]
 BOTNAME = cfg["botname"]
 NAME = cfg.get("name", "cajel")
-OWNER_ID = 8278748114
+# Menggunakan OWNER_ID dari file set, dipastikan integer
+OWNER_ID = int(cfg.get("OWNER_ID", 8278748114))
 LOG_GROUP_ID = int(cfg.get("log_group_id", 0))
 
 # 2. Mengumpulkan API Keys
@@ -29,9 +30,18 @@ for i in range(2, 6):
         clean_key = cfg[key_name].strip()
         if clean_key and clean_key not in API_KEYS: API_KEYS.append(clean_key)
 
+# 3. Memuat Data KBBI ke Memori
+KBBI_DATA = {}
+try:
+    with open("dataKBBI.json", "r", encoding="utf-8") as f:
+        KBBI_DATA = json.load(f)
+        print("✅ Data KBBI berhasil dimuat ke memori.")
+except Exception as e:
+    print(f"❌ Gagal memuat dataKBBI.json: {e}")
+
 bot = AsyncTeleBot(TOKEN)
 
-# 3. Shared Data
+# 4. Shared Data
 shared_data = {
     "cfg": cfg,
     "botname": BOTNAME,
@@ -39,11 +49,13 @@ shared_data = {
     "owner_id": OWNER_ID,
     "log_group_id": LOG_GROUP_ID,
     "api_keys": API_KEYS,
+    "kbbi_data": KBBI_DATA, # Data KBBI sekarang tersedia di sini!
     "whisper_data": {},
     "chat_memories": {},
     "max_memory_length": 12
 }
 
+# (Bagian ytdlp dan log tetap sama)
 try:
     import yt_dlp
     shared_data["ytdlp_import"] = True
@@ -61,24 +73,15 @@ async def send_bot_log(text):
 
 shared_data["send_log"] = send_bot_log
 
-# 4. Plugin Loader dengan Prioritas
+# 5. Plugin Loader
 def load_plugins():
     plugin_folder = "cajel" 
-    if not os.path.exists(plugin_folder):
-        os.makedirs(plugin_folder)
-        
-    init_path = os.path.join(plugin_folder, "__init__.py")
-    if not os.path.exists(init_path):
-        with open(init_path, "w") as f: pass
-
+    if not os.path.exists(plugin_folder): os.makedirs(plugin_folder)
+    
     all_files = sorted(os.listdir(plugin_folder))
-
-    # Prioritaskan database agar selalu siap pertama kali
     if "games_db.py" in all_files:
         all_files.remove("games_db.py")
         all_files.insert(0, "games_db.py")
-
-    # ai_chat selalu di posisi terakhir
     if "ai_chat.py" in all_files:
         all_files.remove("ai_chat.py")
         all_files.append("ai_chat.py")
@@ -95,17 +98,10 @@ def load_plugins():
                 print(f"❌ Gagal memuat plugin [{filename}]: {e}")
 
 async def startup():
-    me = await bot.get_me()
     load_plugins()
-
-    startup_msg = (
-        f"🚀 *[ONLINE]* Bot *{shared_data['name']}* (@{me.username}) berhasil aktif!\n"
-        f"• Folder Fitur: `cajel/` (*Aktif*)."
-    )
-    print(startup_msg)
-    await send_bot_log(startup_msg)
+    print(f"🚀 Bot {shared_data['name']} aktif!")
     await bot.infinity_polling()
 
 if __name__ == "__main__":
     asyncio.run(startup())
-    
+        
