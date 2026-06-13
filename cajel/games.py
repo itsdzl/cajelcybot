@@ -61,25 +61,58 @@ def setup(bot, data):
         )
         await bot.reply_to(m, "🎮 Pusat Game\nPilih mode permainan:", reply_markup=kb)
 
-    # (Admin & Rank command dibungkus singkat)
-    @bot.message_handler(commands=['rank', 'resetrank', 'addpoin', 'setlevel'])
+    @bot.message_handler(commands=['rank', 'resetrank', 'setpoin', 'setlevel'])
     async def admin_handler(m):
         if m.text.startswith('/rank'):
             p = db["get_player"](m.from_user.id, m.from_user.first_name)
             await bot.reply_to(m, f"👤 {p['username']} | Level: {p['level']} | XP: {p['xp']} | Poin: {p['poin']}")
+        
         elif m.from_user.id == OWNER_ID:
+            args = m.text.split()
+            
+            # Perintah Reset Rank (Global atau Spesifik)
             if m.text.startswith('/resetrank'):
-                with open("cajel_players.json", "w", encoding="utf-8") as f: json.dump({}, f)
-                await bot.reply_to(m, "✅ Reset!")
-            elif m.text.startswith('/addpoin'):
-                a = m.text.split(); db["add_rewards"](a[1], "Pemain", int(a[2]), 0)
-                await bot.reply_to(m, "✅ Poin ditambah.")
-            elif m.text.startswith('/setlevel'):
-                a = m.text.split()
                 with open("cajel_players.json", "r+", encoding="utf-8") as f:
                     all_p = json.load(f)
-                    if a[1] in all_p: all_p[a[1]]["level"] = int(a[2]); f.seek(0); json.dump(all_p, f); f.truncate()
-                await bot.reply_to(m, "✅ Level diubah.")
+                    if len(args) > 1: # Reset satu user
+                        target = args[1]
+                        if target in all_p:
+                            all_p[target] = {"username": all_p[target]["username"], "level": 1, "xp": 0, "poin": 0}
+                            f.seek(0); json.dump(all_p, f, indent=4); f.truncate()
+                            await bot.reply_to(m, f"✅ Rank user {target} di-reset.")
+                        else: await bot.reply_to(m, "❌ User tidak ditemukan.")
+                    else: # Reset Global
+                        json.dump({}, open("cajel_players.json", "w", encoding="utf-8"))
+                        await bot.reply_to(m, "✅ Seluruh peringkat di-reset.")
+
+            # Perintah Set Poin (Tambah/Kurang)
+            elif m.text.startswith('/setpoin'):
+                if len(args) < 3:
+                    await bot.reply_to(m, "⚠️ Format: `/setpoin <user_id> <jumlah>`\n(Gunakan angka negatif untuk mengurangi)")
+                    return
+                # Kita asumsikan add_rewards bisa menerima nilai negatif atau kita manipulasi langsung
+                # Sesuai logika database yang digunakan, kita langsung update ke file
+                target, val = args[1], int(args[2])
+                with open("cajel_players.json", "r+", encoding="utf-8") as f:
+                    all_p = json.load(f)
+                    if target in all_p:
+                        all_p[target]["poin"] += val
+                        f.seek(0); json.dump(all_p, f, indent=4); f.truncate()
+                        await bot.reply_to(m, f"✅ Poin diubah sebesar {val}. Total sekarang: {all_p[target]['poin']}")
+                    else: await bot.reply_to(m, "❌ User tidak ditemukan.")
+
+            # Perintah Set Level
+            elif m.text.startswith('/setlevel'):
+                if len(args) < 3:
+                    await bot.reply_to(m, "⚠️ Format: `/setlevel <user_id> <level_baru>`")
+                    return
+                with open("cajel_players.json", "r+", encoding="utf-8") as f:
+                    all_p = json.load(f)
+                    if args[1] in all_p:
+                        all_p[args[1]]["level"] = int(args[2])
+                        f.seek(0); json.dump(all_p, f, indent=4); f.truncate()
+                        await bot.reply_to(m, f"✅ Level user {args[1]} diubah ke {args[2]}.")
+                    else: await bot.reply_to(m, "❌ User tidak ditemukan.")
 
     @bot.message_handler(commands=['skip'])
     async def skip_game(m):
