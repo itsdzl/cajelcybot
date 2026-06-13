@@ -406,7 +406,7 @@ async def allmsg(m):
             await bot.reply_to(m, "❌ Error: \n" + str(err[:1000]))
         return
 
-    if txt.startswith(".exe"):
+        if txt.startswith(".exe"):
         if m.from_user.id != OWNER_ID:
             await bot.reply_to(m, "Eits, jangan sembarangan acak-acak sistem ya! Perintah ini cuma punya Paduka Ijel tercinta! 😠 Blweee 😜")
             return
@@ -417,7 +417,7 @@ async def allmsg(m):
         
         await bot.send_chat_action(m.chat.id, 'typing')
         try:
-            # Mengeksekusi perintah terminal secara asynchronous biar tidak membuat bot nge-lag
+            # Mengeksekusi perintah terminal secara asynchronous
             process = await asyncio.create_subprocess_shell(
                 shell_cmd,
                 stdout=asyncio.subprocess.PIPE,
@@ -428,17 +428,22 @@ async def allmsg(m):
             output = stdout.decode('utf-8', errors='replace').strip()
             error_output = stderr.decode('utf-8', errors='replace').strip()
             
+            # Menggunakan pelarian HTML agar karakter <, >, & tidak merusak parse_mode
+            def html_escape(text):
+                return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            
             response_text = ""
             if output:
-                response_text += f"📤 *Output:*\n`{output}`\n"
+                response_text += f"<b>📤 Output:</b>\n<pre>{html_escape(output)}</pre>\n"
             if error_output:
-                response_text += f"⚠️ *Error Output:*\n`{error_output}`\n"
+                response_text += f"<b>⚠️ Error Output:</b>\n<pre>{html_escape(error_output)}</pre>\n"
             if not response_text:
-                response_text = "✅ *Sukses:* Perintah berhasil dieksekusi tanpa ada output terminal."
+                response_text = "<b>✅ Sukses:</b> Perintah berhasil dieksekusi tanpa ada output terminal."
                 
-            await bot.reply_to(m, response_text[:4000], parse_mode="Markdown")
+            # Menggunakan parse_mode="HTML" karena jauh lebih aman untuk cetak kode/script
+            await bot.reply_to(m, response_text[:4000], parse_mode="HTML")
         except Exception as e:
-            await bot.reply_to(m, f"❌ *Gagal mengeksekusi:* `{str(e)}`", parse_mode="Markdown")
+            await bot.reply_to(m, f"❌ <b>Gagal mengeksekusi:</b> {html_escape(str(e))}", parse_mode="HTML")
         return
 
     # =========================================================
