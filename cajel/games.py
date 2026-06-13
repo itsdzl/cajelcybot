@@ -1,111 +1,95 @@
-import os, sys, asyncio, shutil, importlib
-import telebot
-from telebot.async_telebot import AsyncTeleBot
+import json
+import random
+from telebot import types
 
-# 1. Membaca Konfigurasi Bot
-cfg = {}
-with open("set", "r", encoding="utf8") as f:
-    for line in f:
-        if "=" in line:
-            k, v = line.split("=", 1)
-            cfg[k.strip()] = v.strip()
+# Penyimpanan sesi game di RAM
+game_sessions = {}
 
-TOKEN = cfg["token"]
-BOTNAME = cfg["botname"]
-NAME = cfg.get("name", "cajel")
-OWNER_ID = 8278748114
-LOG_GROUP_ID = int(cfg.get("log_group_id", 0))
+def load_kbbi_word(length=None):
+    """Mengambil 1 kata acak dari dataKBBI.json dengan filter panjang huruf"""
+    try:
+        with open("dataKBBI.json", "r", encoding="utf-8") as f:
+            words = json.load(f)
+            word_list = list(words.keys()) if isinstance(words, dict) else list(words)
+            if length:
+                valid_words = [w.strip().lower() for w in word_list if w.strip().isalpha() and len(w.strip()) == length]
+            else:
+                valid_words = [w.strip().lower() for w in word_list if w.strip().isalpha() and 4 <= len(w.strip()) <= 7]
+            return random.choice(valid_words) if valid_words else "cajel"
+    except: return "cajel"
 
-# 2. Mengumpulkan API Keys
-API_KEYS = []
-if "GEMINI_API_KEY" in cfg:
-    for key in cfg["GEMINI_API_KEY"].split(","):
-        clean_key = key.strip()
-        if clean_key: API_KEYS.append(clean_key)
+def setup(bot, data):
+    # Mengambil fungsi database dari main.py (via shared data)
+    db_func = data["games_db"]
+    add_rewards = db_func["add_rewards"]
+    get_leaderboard = db_func["get_leaderboard"]
 
-for i in range(2, 6):
-    key_name = f"GEMINI_API_KEY_{i}"
-    if key_name in cfg:
-        clean_key = cfg[key_name].strip()
-        if clean_key and clean_key not in API_KEYS: API_KEYS.append(clean_key)
+    def generate_menu_keyboard():
+        kb = types.InlineKeyboardMarkup(row_width=1)
+        kb.add(
+            types.InlineKeyboardButton("🧩 1. Susun Kata", callback_data="game_start_susun"),
+            types.InlineKeyboardButton("🔍 2. Lengkapi Kata", callback_data="game_start_lengkapi"),
+            types.InlineKeyboardButton("🟩 3. Wordle (5 Huruf)", callback_data="game_start_wordle"),
+            types.InlineKeyboardButton("🏆 Peringkat", callback_data="game_leaderboard")
+        )
+        return kb
 
-bot = AsyncTeleBot(TOKEN)
+    @bot.message_handler(commands=['game', 'games'])
+    async def send_game_menu(m):
+        pesan = (
+            "🎮 **Pusat Game Cajel Cybot** 🎮\n\n"
+            "Pilih mode permainan, Paduka! Cukup ketik jawabanmu langsung di chat tanpa perlu reply!\n\n"
+            "• /skip untuk ganti kata\n"
+            "• /menyerah untuk berhenti"
+        )
+        await bot.reply_to(m, pesan, reply_markup=generate_menu_keyboard(), parse_mode="Markdown")
 
-# 3. Shared Data
-shared_data = {
-    "cfg": cfg,
-    "botname": BOTNAME,
-    "name": NAME,
-    "owner_id": OWNER_ID,
-    "log_group_id": LOG_GROUP_ID,
-    "api_keys": API_KEYS,
-    "whisper_data": {},
-    "chat_memories": {},
-    "max_memory_length": 12
-}
-
-try:
-    import yt_dlp
-    shared_data["ytdlp_import"] = True
-except ImportError:
-    shared_data["ytdlp_import"] = False
-shared_data["ytdlp_cli"] = shutil.which("yt-dlp") is not None
-shared_data["ytdlp_available"] = shared_data["ytdlp_import"] or shared_data["ytdlp_cli"]
-
-async def send_bot_log(text):
-    if shared_data["log_group_id"] != 0:
-        try:
-            await bot.send_message(shared_data["log_group_id"], text, parse_mode="Markdown")
-        except Exception as e:
-            print(f"[LOG ERROR] Gagal mengirim log: {e}")
-
-shared_data["send_log"] = send_bot_log
-
-# 4. Plugin Loader dengan Prioritas
-def load_plugins():
-    plugin_folder = "cajel" 
-    if not os.path.exists(plugin_folder):
-        os.makedirs(plugin_folder)
+    @bot.callback_query_handler(func=lambda call: call.data.startswith("game_"))
+    async def handle_game_callbacks(call):
+        chat_id = call.message.chat.id
+        action = call.data
         
-    init_path = os.path.join(plugin_folder, "__init__.py")
-    if not os.path.exists(init_path):
-        with open(init_path, "w") as f: pass
+        if action == "game_leaderboard":
+            board = get_leaderboard()
+            txt = "🏆 **TOP 10 PERINGKAT** 🏆\n\n" + "\n".join([f"{i}. {p[1]['username']} (Lvl {p[1]['level']})" for i, p in enumerate(board, 1)])
+            await bot.edit_message_text(txt, chat_id, call.message.message_id, reply_markup=types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("⬅️ Kembali", callback_data="game_menu")), parse_mode="Markdown")
+            return
 
-    all_files = sorted(os.listdir(plugin_folder))
+        if action == "game_menu":
+            await bot.edit_message_text("🎮 **Pilih mode permainan:**", chat_id, call.message.message_id, reply_markup=generate_menu_keyboard())
+            return
+        
+        if action == "game_start_wordle":
+            word = load_kbbi_word(length=5)
+            game_sessions[chat_id] = {"mode": "wordle", "jawaban": word, "kesempatan": 6, "history": []}
+            await bot.edit_message_text(f"🟩 **WORDLE INDONESIA**\n\nTarget: 5 huruf. Ketik tebakanmu langsung!\n/skip /menyerah", chat_id, call.message.message_id, parse_mode="Markdown")
+        
+        else:
+            word = load_kbbi_word()
+            if action == "game_start_susun":
+                s = list(word.upper()); random.shuffle(s); s_str = " ".join(s)
+                game_sessions[chat_id] = {"mode": "susun", "jawaban": word}
+                await bot.edit_message_text(f"🧩 **SUSUN KATA**\n\nHuruf: {s_str}\n\nKetik jawabanmu langsung!\n/skip /menyerah", chat_id, call.message.message_id, parse_mode="Markdown")
+            
+            elif action == "game_start_lengkapi":
+                d = " ".join([c.upper() if i%2==0 else "•" for i, c in enumerate(word)])
+                game_sessions[chat_id] = {"mode": "lengkapi", "jawaban": word, "kesempatan": 6}
+                await bot.edit_message_text(f"🔍 **LENGKAPI KATA**\n\nKata: {d}\n\nKetik jawabanmu langsung!\n/skip /menyerah", chat_id, call.message.message_id, parse_mode="Markdown")
 
-    # Prioritaskan database agar selalu siap pertama kali
-    if "games_db.py" in all_files:
-        all_files.remove("games_db.py")
-        all_files.insert(0, "games_db.py")
+    @bot.message_handler(commands=['skip', 'menyerah'])
+    async def handle_game_control(m):
+        if m.chat.id in game_sessions:
+            ans = game_sessions[m.chat.id]["jawaban"].upper()
+            del game_sessions[m.chat.id]
+            await bot.reply_to(m, f"🏳️ Sesi dihentikan. Kata aslinya adalah: {ans}")
 
-    # ai_chat selalu di posisi terakhir
-    if "ai_chat.py" in all_files:
-        all_files.remove("ai_chat.py")
-        all_files.append("ai_chat.py")
-
-    for filename in all_files:
-        if filename.endswith(".py") and filename != "__init__.py":
-            module_name = f"{plugin_folder}.{filename[:-3]}"
-            try:
-                module = importlib.import_module(module_name)
-                if hasattr(module, "setup"):
-                    module.setup(bot, shared_data)
-                    print(f"✅ Plugin [{filename}] berhasil dimuat.")
-            except Exception as e:
-                print(f"❌ Gagal memuat plugin [{filename}]: {e}")
-
-async def startup():
-    me = await bot.get_me()
-    load_plugins()
-
-    startup_msg = (
-        f"🚀 *[ONLINE]* Bot *{shared_data['name']}* (@{me.username}) berhasil aktif!\n"
-        f"• Folder Fitur: `cajel/` (*Aktif*)."
-    )
-    print(startup_msg)
-    await send_bot_log(startup_msg)
-    await bot.infinity_polling()
-
-if __name__ == "__main__":
-    asyncio.run(startup())
-    
+    @bot.message_handler(func=lambda m: m.chat.id in game_sessions and not m.text.startswith('/'))
+    async def handle_game_replies(m):
+        chat_id = m.chat.id; s = game_sessions[chat_id]; tebakan = m.text.lower()
+        if tebakan == s["jawaban"].lower():
+            p_data, _ = add_rewards(m.from_user.id, m.from_user.first_name, 20, 40)
+            del game_sessions[chat_id]
+            await bot.reply_to(m, f"🎉 Benar! Poin: {p_data['poin']} | Level: {p_data['level']}")
+        else:
+            await bot.reply_to(m, "❌ Salah! Coba lagi atau gunakan /skip.")
+                              
