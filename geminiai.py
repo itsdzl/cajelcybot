@@ -11,18 +11,9 @@
 # - Fitur matikan bot via kata "syuh" khusus owner
 # - Perintah kegunaan: /info, /mock (mengejek), dan /help (daftar perintah)
 # - Perintah developer: .eval [kode] khusus OWNER_ID
-# - FITUR GETMUSIC: Unduh musik mp3/audio dari YouTube lewat query pencarian!
-# - ANTI-SPAM & COOLDOWN: Jeda respon 8 detik per grup + filter pesan pendek!
 
-import random, asyncio, aiohttp, json, os, sys, traceback, time
+import random, asyncio, aiohttp, json, os, sys, traceback, subprocess, shutil
 from telebot.async_telebot import AsyncTeleBot
-
-# Coba import yt-dlp secara aman
-try:
-    import yt_dlp
-    YTDLP_AVAILABLE = True
-except ImportError:
-    YTDLP_AVAILABLE = False
 
 cfg={}
 with open("set", "r", encoding="utf8") as f:
@@ -56,10 +47,16 @@ for i in range(2, 6):
 bot = AsyncTeleBot(TOKEN)
 
 # ---------------------------------------------------------
-# SISTEM ANTI-SPAM (COOLDOWN)
+# BAGIAN DETEKSI YTDLP HYBRID (YANG DIGANTI)
 # ---------------------------------------------------------
-last_chat_time = {}   # Menyimpan waktu respon terakhir per Chat ID
-COOLDOWN_SECONDS = 8  # Jeda minimal antar respon AI (dalam detik)
+try:
+    import yt_dlp
+    YTDLP_IMPORT_AVAILABLE = True
+except ImportError:
+    YTDLP_IMPORT_AVAILABLE = False
+
+YTDLP_CLI_AVAILABLE = shutil.which("yt-dlp") is not None
+YTDLP_AVAILABLE = YTDLP_IMPORT_AVAILABLE or YTDLP_CLI_AVAILABLE
 
 async def ask_gemini(prompt, user_name="User"):
     if not API_KEYS:
@@ -140,46 +137,108 @@ async def ask_gemini(prompt, user_name="User"):
     return "g mood, nanti aja ya!"
 
 # ---------------------------------------------------------
-# FUNGSI UNDUH MUSIK YOUTUBE (RUN DI EXECUTOR AGAR TIDAK BLOCKING)
+# FUNGSI UNDUH MUSIK HYBRID (YANG DIGANTI)
 # ---------------------------------------------------------
 def download_youtube_audio(query):
     if not YTDLP_AVAILABLE:
-        return None, "Aduh beb, library `yt-dlp` belum di-install di VPS/Termux kamu! Ketik `pip install yt-dlp` dulu ya! 😠"
+        return None, "ytdlp belum diinstall"
     
-    # Folder sementara untuk download
     os.makedirs("downloads", exist_ok=True)
     
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': 'downloads/%(title)s.%(ext)s',
-        'quiet': True,
-        'no_warnings': True,
-        'default_search': 'ytsearch',
-        'max_entries': 1,
-    }
-    
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(query, download=True)
-            if 'entries' in info and len(info['entries']) > 0:
-                video_info = info['entries'][0]
-            else:
-                video_info = info
+    # Mencoba dengan Python module jika tersedia
+    if YTDLP_IMPORT_AVAILABLE:
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': 'downloads/%(title)s.%(ext)s',
+            'quiet': True,
+            'no_warnings': True,
+            'default_search': 'ytsearch',
+            'max_entries': 1,
+        }
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(query, download=True)
+                if 'entries' in info and len(info['entries']) > 0:
+                    video_info = info['entries'][0]
+                else:
+                    video_info = info
+                    
+                filename = ydl.prepare_filename(video_info)
+                title = video_info.get('title', 'Unknown Title')
+                uploader = video_info.get('uploader', 'Unknown Artist')
+                duration = video_info.get('duration', 0)
                 
-            filename = ydl.prepare_filename(video_info)
-            # Dapatkan metadata dasar
-            title = video_info.get('title', 'Unknown Title')
-            uploader = video_info.get('uploader', 'Unknown Artist')
-            duration = video_info.get('duration', 0)
+                return {
+                    "path": filename,
+                    "title": title,
+                    "performer": uploader,
+                    "duration": duration
+                }, None
+        except Exception:
+            pass
+
+    # Cadangan: Mencoba dengan sistem CLI subprocess jika import gagal
+    if YTDLP_CLI_AVAILABLE:
+        try:
+            cmd_meta = [
+                "yt-dlp",
+                "--skip-download",
+                "--print", "%(title)s || %(uploader)s || %(duration)s || %(ext)s",
+                "ytsearch1:" + query
+            ]
+            proc_meta = subprocess.run(cmd_meta, capture_output=True, text=True, check=True)
+            meta_output = proc_meta.stdout.strip()
             
-            return {
-                "path": filename,
-                "title": title,
-                "performer": uploader,
-                "duration": duration
-            }, None
-    except Exception as e:
-        return None, str(e)
+            parts = meta_output.split(" || ")
+            if len(parts) >= 4:
+                title = parts[0]
+                uploader = parts[1]
+                try:
+                    duration = int(float(parts[2]))
+                except Exception:
+                    duration = 0
+                ext = parts[3]
+            else:
+                title = "Downloaded Song"
+                uploader = "YouTube"
+                duration = 0
+                ext = "mp3"
+                
+            safe_title = "".join([c for c in title if c.isalnum() or c in " '()-_. "]).strip()
+            if not safe_title:
+                safe_title = "song"
+            filename = f"downloads/{safe_title}.{ext}"
+            
+            cmd_dl = [
+                "yt-dlp",
+                "-f", "bestaudio/best",
+                "-o", filename,
+                "ytsearch1:" + query
+            ]
+            subprocess.run(cmd_dl, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+            
+            if os.path.exists(filename):
+                return {
+                    "path": filename,
+                    "title": title,
+                    "performer": uploader,
+                    "duration": duration
+                }, None
+                
+            for file in os.listdir("downloads"):
+                if file.startswith(safe_title):
+                    return {
+                        "path": os.path.join("downloads", file),
+                        "title": title,
+                        "performer": uploader,
+                        "duration": duration
+                    }, None
+                    
+            return None, "File lagu tidak dapat ditemukan setelah diunduh."
+        except Exception as e:
+            return None, f"Gagal mengunduh lewat sistem: {str(e)}"
+
+    return None, "ytdlp belum diinstall"
 
 # =========================================================
 # HANDLER KHUSUS /START (WELCOME TEXT DI PRIVATE CHAT)
@@ -216,7 +275,6 @@ async def get_music(m):
     await bot.send_chat_action(m.chat.id, 'upload_voice')
     status_msg = await bot.reply_to(m, "Sabar ya beb, cajel lagi cariin lagunya... 🎧")
     
-    # Jalankan download di thread terpisah agar bot tidak nge-lag/freeze
     loop = asyncio.get_event_loop()
     music_data, err = await loop.run_in_executor(None, download_youtube_audio, query)
     
@@ -232,7 +290,6 @@ async def get_music(m):
         performer = music_data["performer"]
         duration = music_data["duration"]
         
-        # Kirim file audio ke Telegram
         with open(file_path, "rb") as audio_file:
             await bot.send_audio(
                 chat_id=m.chat.id,
@@ -243,11 +300,9 @@ async def get_music(m):
                 reply_to_message_id=m.message_id
             )
             
-        # Hapus file lokal setelah dikirim agar penyimpanan server/Termux tetap hemat
         if os.path.exists(file_path):
             os.remove(file_path)
             
-        # Hapus pesan status pencarian
         await bot.delete_message(m.chat.id, status_msg.message_id)
         
     except Exception as e:
@@ -259,7 +314,6 @@ async def allmsg(m):
     low = txt.lower().strip()
     user_name = m.from_user.first_name
     OWNER_ID = 8278748114 
-    chat_id = m.chat.id
 
     if low.startswith("/start") or low.startswith("/getmusic"):
         return
@@ -377,26 +431,9 @@ async def allmsg(m):
             is_reply_to_bot = True
 
     dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low or is_reply_to_bot
-    
-    # FILTER KUOTA: Nimbrung random hanya akan merespon teks yang panjangnya minimal 6 karakter
-    nimbrung_random = (
-        (m.chat.type in ["group", "supergroup"]) 
-        and (len(txt.strip()) >= 6) 
-        and (random.random() < 0.10) 
-        and not is_reply_to_bot
-    )
+    nimbrung_random = (m.chat.type in ["group", "supergroup"]) and (random.random() < 0.10) and not is_reply_to_bot
 
     if dipanggil or nimbrung_random:
-        # SISTEM REM ANTI-SPAM (COOLDOWN)
-        now = time.time()
-        last_time = last_chat_time.get(chat_id, 0)
-        
-        # Jika cooldown belum lewat 8 detik, abaikan chat (Kecuali chat di PC)
-        if m.chat.type != "private" and (now - last_time < COOLDOWN_SECONDS):
-            return
-            
-        last_chat_time[chat_id] = now
-
         clean_prompt = txt.replace("cajel", "").replace(BOTNAME, "").strip()
         if not clean_prompt:
             clean_prompt = "halo apa kabar"
