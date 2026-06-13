@@ -140,7 +140,7 @@ async def ask_gemini(prompt, user_name="User"):
         if key_failed:
             continue
 
-    return "g mood, nanti aja ya!"
+    return "g mood, nanti aja y.."
 
 # ---------------------------------------------------------
 # FUNGSI UNDUH MUSIK HYBRID
@@ -289,7 +289,7 @@ async def send_whisper_cmd(m):
 
     args = m.text.split(maxsplit=2)
     if len(args) < 3 or not args[1].startswith('@'):
-        await bot.reply_to(m, "Cara pakainya salah, Paduka! 😠\nContoh: `/whisper @username Aku suka kamu`", parse_mode="Markdown")
+        await bot.reply_to(m, "Cara pakenya salah! 😠\nContoh: `/whisper @username Aku suka kamu`", parse_mode="Markdown")
         return
 
     target_username = args[1].replace('@', '').lower()
@@ -303,14 +303,14 @@ async def send_whisper_cmd(m):
 
     markup = telebot.types.InlineKeyboardMarkup()
     btn = telebot.types.InlineKeyboardButton(
-        text=f"✉️ Buka Pesan Rahasia dari {sender_name}", 
+        text=f"✉️ liat pesan rahasia dari {sender_name}", 
         callback_data="open_whisper"
     )
     markup.add(btn)
 
     sent_msg = await bot.send_message(
         m.chat.id, 
-        f"🤫 *HEBOH!* Ada pesan bisikan rahasia nih buat *@ {target_username}*.\nSiapa nih yang kepo? 🤭", 
+        f"🤫 kiw, ada pesan rahasia nih buat *@ {target_username}*.\nsiapa nih yang kepo? 🤭", 
         parse_mode="Markdown", 
         reply_markup=markup
     )
@@ -327,21 +327,21 @@ async def send_whisper_cmd(m):
 async def get_music(m):
     query = m.text.replace("/getmusic", "").strip()
     if not query:
-        await bot.reply_to(m, "Masukin judul lagu atau penyanyinya juga dong, beb! Contoh: `/getmusic dumes` 😠", parse_mode="Markdown")
+        await bot.reply_to(m, "Masukin judul lagu atau penyanyinya juga dong Contoh: `/getmusic dumes` 😠", parse_mode="Markdown")
         return
         
     await bot.send_chat_action(m.chat.id, 'upload_voice')
-    status_msg = await bot.reply_to(m, "Sabar ya beb, cajel lagi cariin lagunya... 🎧")
+    status_msg = await bot.reply_to(m, "sabar ya beb, cajel lagi cariin lagunya... 🎧")
     
     loop = asyncio.get_event_loop()
     music_data, err = await loop.run_in_executor(None, download_youtube_audio, query)
     
     if err:
-        await bot.edit_message_text(f"❌ Yah gagal download lagunya beb, error: {err}", m.chat.id, status_msg.message_id)
+        await bot.edit_message_text(f"❌ yah gagal download lagunya 😞, error: {err}", m.chat.id, status_msg.message_id)
         return
         
     try:
-        await bot.edit_message_text("Lagu ketemu! Lagi proses kirim yaa... 🚀", m.chat.id, status_msg.message_id)
+        await bot.edit_message_text("ketemuuu! tunggu bentar ya... dududu", m.chat.id, status_msg.message_id)
         
         file_path = music_data["path"]
         title = music_data["title"]
@@ -364,7 +364,7 @@ async def get_music(m):
         await bot.delete_message(m.chat.id, status_msg.message_id)
         
     except Exception as e:
-        await bot.edit_message_text(f"❌ Duh gagal ngirim audionya, error: {str(e)}", m.chat.id, status_msg.message_id)
+        await bot.edit_message_text(f"❌ yahh cajel gagal ngirim audionya, error: {str(e)}", m.chat.id, status_msg.message_id)
 
 # =========================================================
 # HANDLER INLINE QUERY (FITUR BISIKAN @cajelcybot)
@@ -404,7 +404,7 @@ async def query_text(inline_query):
 
         markup = telebot.types.InlineKeyboardMarkup()
         btn = telebot.types.InlineKeyboardButton(
-            text="✉️ Buka Bisikan Rahasia", 
+            text="✉️ Buka Pesan Rahasia", 
             callback_data=f"wh_{unique_id}"
         )
         markup.add(btn)
@@ -415,7 +415,7 @@ async def query_text(inline_query):
             description=f"Isi pesan: {secret_message[:30]}...",
             reply_markup=markup,
             input_message_content=telebot.types.InputTextMessageContent(
-                message_text=f"🤫 *Sssttt...* Ada pesan bisikan rahasia nih khusus buat *@ {target_username}*.\nOrang lain dilarang ngintip ya! 😠 Simpanse aja kepo! 🤭",
+                message_text=f"🤫 *Sssttt...* Ada pesan rahasia nih khusus buat *@ {target_username}*.\nOrang lain dilarang ngintip ya! 😠",
                 parse_mode="Markdown"
             )
         )
@@ -478,7 +478,7 @@ async def allmsg(m):
     # =========================================================
     if txt.startswith(".eval"):
         if m.from_user.id != OWNER_ID:
-            await bot.reply_to(m, "heh tanganmu kotor ya! gausa sosoan pakai fitur dewa, kamu bukan paduka ijel! 😠 BLEEE 😜")
+            await bot.reply_to(m, "heh tanganmu kotor ya! gausa sosoan pakai fitur ini, kamu bukan aa ijel! 😠 BLEEE 😜")
             return
             
         cmd = txt.replace(".eval", "").strip()
@@ -524,16 +524,16 @@ async def allmsg(m):
             f"• Panggil namaku (`cajel`) atau **cukup reply chat-ku**, maka aku akan balas menggunakan kecerdasan murniku.\n"
             f"• Hati-hati, aku suka ikut nimbrung obrolan secara tiba-tiba meskipun gak dipanggil! 🤭\n\n"
             f"🛠 *Perintah Publik:* \n"
-            f"• `/getmusic [judul]` - Cari dan unduh musik MP3 langsung dari YouTube!\n"
-            f"• `/whisper @username [pesan]` - Kirim pesan bisikan rahasia (bisa juga via inline mode ketik `@{BOTNAME} [pesan] @username`).\n"
-            f"• `/info` - Cek informasi detail bot, data ID kamu, dan status server.\n"
-            f"• `/mock [teks]` - Mengubah teks menjadi format ejekan Spongebob. Bisa juga dipakai dengan membalas (*reply*) pesan teman lalu ketik `/mock`.\n"
-            f"• `/help` - Menampilkan menu bantuan yang sedang kamu baca ini."
+            f"• /getmusic [judul] - Cari dan unduh musik MP3 langsung dari YouTube!\n"
+            f"• /whisper @username [pesan] - Kirim pesan bisikan rahasia (bisa juga via inline mode ketik `@{BOTNAME} [pesan] @username`).\n"
+            f"• /info - Cek informasi detail bot, data ID kamu, dan status server.\n"
+            f"• /mock [teks] - Mengubah teks menjadi format ejekan Spongebob. Bisa juga dipakai dengan membalas (*reply*) pesan teman lalu ketik `/mock`.\n"
+            f"• /help - Menampilkan menu bantuan yang sedang kamu baca ini."
         )
         
         if m.from_user.id == OWNER_ID:
             help_text += (
-                f"\n\n👑 *MENU RAHASIA PADUKA IJEL (OWNER):* \n"
+                f"\n\n👑 *MENU RAHASIA PADUKA IJEL:* \n"
                 f"• `syuh` - Mematikan total bot dan menghentikan sesi jarak jauh.\n"
                 f"• `eval [kode]` - Menjalankan script Python secara langsung di server via chat."
             )
@@ -570,7 +570,7 @@ async def allmsg(m):
     # =========================================================
     if low == "syuh":
         if m.from_user.id == OWNER_ID:
-            await bot.reply_to(m, "ih jahat dimatiin 🥹 babai paduka ijel...")
+            await bot.reply_to(m, "ih jahat dimatiin 🥹...")
             await asyncio.sleep(1)
             os._exit(0)
         else:
