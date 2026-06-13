@@ -145,7 +145,7 @@ def download_youtube_audio(query):
     
     os.makedirs("downloads", exist_ok=True)
     
-    # Mencoba dengan Python module jika tersedia
+    # Metode 1: Mencoba menggunakan Python Import (Jika berhasil)
     if YTDLP_IMPORT_AVAILABLE:
         ydl_opts = {
             'format': 'bestaudio/best',
@@ -154,6 +154,7 @@ def download_youtube_audio(query):
             'no_warnings': True,
             'default_search': 'ytsearch',
             'max_entries': 1,
+            'noplaylist': True,
         }
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -164,6 +165,15 @@ def download_youtube_audio(query):
                     video_info = info
                     
                 filename = ydl.prepare_filename(video_info)
+                
+                # Cari kecocokan file jika ekstensi berubah pasca-download
+                if not os.path.exists(filename):
+                    base = os.path.splitext(filename)[0]
+                    for f in os.listdir("downloads"):
+                        if os.path.join("downloads", f).startswith(base):
+                            filename = os.path.join("downloads", f)
+                            break
+
                 title = video_info.get('title', 'Unknown Title')
                 uploader = video_info.get('uploader', 'Unknown Artist')
                 duration = video_info.get('duration', 0)
@@ -177,45 +187,50 @@ def download_youtube_audio(query):
         except Exception:
             pass
 
-    # Cadangan: Mencoba dengan sistem CLI subprocess jika import gagal
+    # Metode 2: Mencoba menggunakan Subprocess CLI (Paling Tangguh!)
     if YTDLP_CLI_AVAILABLE:
         try:
+            # Ambil metadata menggunakan dump-json (Sangat kompatibel di semua versi yt-dlp)
             cmd_meta = [
                 "yt-dlp",
                 "--skip-download",
-                "--print", "%(title)s || %(uploader)s || %(duration)s || %(ext)s",
+                "--dump-json",
+                "--no-playlist",
                 "ytsearch1:" + query
             ]
-            proc_meta = subprocess.run(cmd_meta, capture_output=True, text=True, check=True)
-            meta_output = proc_meta.stdout.strip()
+            proc_meta = subprocess.run(cmd_meta, capture_output=True, text=True)
             
-            parts = meta_output.split(" || ")
-            if len(parts) >= 4:
-                title = parts[0]
-                uploader = parts[1]
+            # Nilai default jika parsing metadata gagal
+            title = "Lagu Download"
+            uploader = "YouTube"
+            duration = 0
+            ext = "mp3"
+            
+            if proc_meta.returncode == 0 and proc_meta.stdout.strip():
                 try:
-                    duration = int(float(parts[2]))
+                    # Ambil baris pertama output JSON
+                    meta = json.loads(proc_meta.stdout.split('\n')[0])
+                    title = meta.get('title', title)
+                    uploader = meta.get('uploader', uploader)
+                    duration = int(meta.get('duration', 0))
+                    ext = meta.get('ext', ext)
                 except Exception:
-                    duration = 0
-                ext = parts[3]
-            else:
-                title = "Downloaded Song"
-                uploader = "YouTube"
-                duration = 0
-                ext = "mp3"
+                    pass
                 
             safe_title = "".join([c for c in title if c.isalnum() or c in " '()-_. "]).strip()
             if not safe_title:
                 safe_title = "song"
             filename = f"downloads/{safe_title}.{ext}"
             
+            # Eksekusi download audio
             cmd_dl = [
                 "yt-dlp",
                 "-f", "bestaudio/best",
+                "--no-playlist",
                 "-o", filename,
                 "ytsearch1:" + query
             ]
-            subprocess.run(cmd_dl, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+            proc_dl = subprocess.run(cmd_dl, capture_output=True, text=True)
             
             if os.path.exists(filename):
                 return {
@@ -225,8 +240,9 @@ def download_youtube_audio(query):
                     "duration": duration
                 }, None
                 
+            # Cari file di folder downloads jika ekstensi file pasca-download berubah
             for file in os.listdir("downloads"):
-                if file.startswith(safe_title):
+                if file.startswith(safe_title) or (safe_title in file):
                     return {
                         "path": os.path.join("downloads", file),
                         "title": title,
@@ -234,7 +250,7 @@ def download_youtube_audio(query):
                         "duration": duration
                     }, None
                     
-            return None, "File lagu tidak dapat ditemukan setelah diunduh."
+            return None, f"File tidak ditemukan. Detail log: {proc_dl.stderr[:150]}"
         except Exception as e:
             return None, f"Gagal mengunduh lewat sistem: {str(e)}"
 
