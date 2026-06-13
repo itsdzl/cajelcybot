@@ -83,7 +83,7 @@ def setup(bot, data):
                 if len(safe_error) > 3800: safe_error = safe_error[:3800] + "\n\n...[Error Terpotong]..."
                 response_text += f"<b>⚠️ Error Output:</b>\n<pre>{safe_error}</pre>\n"
             if not response_text:
-                response_text = "<b>✅ Sukses:</b> Perintah berhasil dieksekusi tanpa ada output terminal."
+                response_text = "<b>✅ success:</b>"
                 
             await bot.reply_to(m, response_text, parse_mode="HTML")
         except Exception as e:
