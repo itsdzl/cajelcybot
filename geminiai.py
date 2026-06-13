@@ -11,8 +11,10 @@
 # - Fitur matikan bot via kata "syuh" khusus owner
 # - Perintah kegunaan: /info, /mock (mengejek), dan /help (daftar perintah)
 # - Perintah developer: .eval [kode] khusus OWNER_ID
+# - FITUR PREMIUM: Whisper Secret Message via Command /whisper & Inline Mode (@botname)
 
-import random, asyncio, aiohttp, json, os, sys, traceback, subprocess, shutil
+import random, asyncio, aiohttp, json, os, sys, traceback, subprocess, shutil, hashlib
+import telebot
 from telebot.async_telebot import AsyncTeleBot
 
 cfg={}
@@ -25,6 +27,10 @@ with open("set", "r", encoding="utf8") as f:
 TOKEN = cfg["token"]
 BOTNAME = cfg["botname"]
 NAME = cfg.get("name", "cajel")
+OWNER_ID = 8278748114 
+
+# Kamus database sementara di memori untuk menyimpan pesan rahasia whisper
+whisper_data = {}
 
 # ---------------------------------------------------------
 # SISTEM DETEKSI MULTI-API KEY (ROTASI)
@@ -47,7 +53,7 @@ for i in range(2, 6):
 bot = AsyncTeleBot(TOKEN)
 
 # ---------------------------------------------------------
-# BAGIAN DETEKSI YTDLP HYBRID (YANG DIGANTI)
+# BAGIAN DETEKSI YTDLP HYBRID
 # ---------------------------------------------------------
 try:
     import yt_dlp
@@ -137,7 +143,7 @@ async def ask_gemini(prompt, user_name="User"):
     return "g mood, nanti aja ya!"
 
 # ---------------------------------------------------------
-# FUNGSI UNDUH MUSIK HYBRID (YANG DIGANTI)
+# FUNGSI UNDUH MUSIK HYBRID
 # ---------------------------------------------------------
 def download_youtube_audio(query):
     if not YTDLP_AVAILABLE:
@@ -145,7 +151,7 @@ def download_youtube_audio(query):
     
     os.makedirs("downloads", exist_ok=True)
     
-    # Metode 1: Mencoba menggunakan Python Import (Jika berhasil)
+    # Metode 1: Mencoba menggunakan Python Import
     if YTDLP_IMPORT_AVAILABLE:
         ydl_opts = {
             'format': 'bestaudio/best',
@@ -166,7 +172,6 @@ def download_youtube_audio(query):
                     
                 filename = ydl.prepare_filename(video_info)
                 
-                # Cari kecocokan file jika ekstensi berubah pasca-download
                 if not os.path.exists(filename):
                     base = os.path.splitext(filename)[0]
                     for f in os.listdir("downloads"):
@@ -187,10 +192,9 @@ def download_youtube_audio(query):
         except Exception:
             pass
 
-    # Metode 2: Mencoba menggunakan Subprocess CLI (Paling Tangguh!)
+    # Metode 2: Mencoba menggunakan Subprocess CLI
     if YTDLP_CLI_AVAILABLE:
         try:
-            # Ambil metadata menggunakan dump-json (Sangat kompatibel di semua versi yt-dlp)
             cmd_meta = [
                 "yt-dlp",
                 "--skip-download",
@@ -200,7 +204,6 @@ def download_youtube_audio(query):
             ]
             proc_meta = subprocess.run(cmd_meta, capture_output=True, text=True)
             
-            # Nilai default jika parsing metadata gagal
             title = "Lagu Download"
             uploader = "YouTube"
             duration = 0
@@ -208,7 +211,6 @@ def download_youtube_audio(query):
             
             if proc_meta.returncode == 0 and proc_meta.stdout.strip():
                 try:
-                    # Ambil baris pertama output JSON
                     meta = json.loads(proc_meta.stdout.split('\n')[0])
                     title = meta.get('title', title)
                     uploader = meta.get('uploader', uploader)
@@ -222,7 +224,6 @@ def download_youtube_audio(query):
                 safe_title = "song"
             filename = f"downloads/{safe_title}.{ext}"
             
-            # Eksekusi download audio
             cmd_dl = [
                 "yt-dlp",
                 "-f", "bestaudio/best",
@@ -240,7 +241,6 @@ def download_youtube_audio(query):
                     "duration": duration
                 }, None
                 
-            # Cari file di folder downloads jika ekstensi file pasca-download berubah
             for file in os.listdir("downloads"):
                 if file.startswith(safe_title) or (safe_title in file):
                     return {
@@ -277,6 +277,48 @@ async def send_welcome(m):
         await bot.reply_to(m, welcome_message, parse_mode="Markdown")
     else:
         await bot.reply_to(m, "Ngapain start-start di grup? PC sini kalau berani 😠")
+
+# =========================================================
+# HANDLER PERINTAH /WHISPER (COMMAND GRUP VERSI MANUAL)
+# =========================================================
+@bot.message_handler(commands=['whisper'])
+async def send_whisper_cmd(m):
+    if m.chat.type == "private":
+        await bot.reply_to(m, "Fitur ini cuma bisa dipake di grup, beb! Biar yang lain pada kepo 😜")
+        return
+
+    args = m.text.split(maxsplit=2)
+    if len(args) < 3 or not args[1].startswith('@'):
+        await bot.reply_to(m, "Cara pakainya salah, Paduka! 😠\nContoh: `/whisper @username Aku suka kamu`", parse_mode="Markdown")
+        return
+
+    target_username = args[1].replace('@', '').lower()
+    secret_message = args[2]
+    sender_name = m.from_user.first_name
+
+    try:
+        await bot.delete_message(m.chat.id, m.message_id)
+    except Exception:
+        pass
+
+    markup = telebot.types.InlineKeyboardMarkup()
+    btn = telebot.types.InlineKeyboardButton(
+        text=f"✉️ Buka Pesan Rahasia dari {sender_name}", 
+        callback_data="open_whisper"
+    )
+    markup.add(btn)
+
+    sent_msg = await bot.send_message(
+        m.chat.id, 
+        f"🤫 *HEBOH!* Ada pesan bisikan rahasia nih buat *@ {target_username}*.\nSiapa nih yang kepo? 🤭", 
+        parse_mode="Markdown", 
+        reply_markup=markup
+    )
+
+    whisper_data[sent_msg.message_id] = {
+        "target": target_username,
+        "message": secret_message
+    }
 
 # =========================================================
 # HANDLER PERINTAH /GETMUSIC
@@ -324,18 +366,115 @@ async def get_music(m):
     except Exception as e:
         await bot.edit_message_text(f"❌ Duh gagal ngirim audionya, error: {str(e)}", m.chat.id, status_msg.message_id)
 
+# =========================================================
+# HANDLER INLINE QUERY (FITUR BISIKAN @cajelcybot)
+# =========================================================
+@bot.inline_handler(func=lambda query: len(query.query) > 0)
+async def query_text(inline_query):
+    try:
+        raw_text = inline_query.query
+        parts = raw_text.split()
+        target_username = ""
+        
+        if parts[-1].startswith('@') and len(parts) > 1:
+            target_username = parts[-1].replace('@', '').lower()
+            secret_message = " ".join(parts[:-1])
+        elif parts[0].startswith('@') and len(parts) > 1:
+            target_username = parts[0].replace('@', '').lower()
+            secret_message = " ".join(parts[1:])
+        else:
+            hint = telebot.types.InlineQueryResultArticle(
+                id='hint',
+                title='Format Bisikan Salah! 😠',
+                description='Ketik: [isi pesan] @username target',
+                input_message_content=telebot.types.InputTextMessageContent(
+                    message_text='Cara pakai whisper: `@cajelcybot isi pesan @username` 😜',
+                    parse_mode='Markdown'
+                )
+            )
+            await bot.answer_inline_query(inline_query.id, [hint], cache_time=1)
+            return
+
+        unique_id = hashlib.md5(f"{inline_query.id}_{secret_message}".encode()).hexdigest()[:10]
+        
+        whisper_data[unique_id] = {
+            "target": target_username,
+            "message": secret_message
+        }
+
+        markup = telebot.types.InlineKeyboardMarkup()
+        btn = telebot.types.InlineKeyboardButton(
+            text="✉️ Buka Bisikan Rahasia", 
+            callback_data=f"wh_{unique_id}"
+        )
+        markup.add(btn)
+
+        result = telebot.types.InlineQueryResultArticle(
+            id=unique_id,
+            title=f"Kirim bisikan ke @{target_username}",
+            description=f"Isi pesan: {secret_message[:30]}...",
+            reply_markup=markup,
+            input_message_content=telebot.types.InputTextMessageContent(
+                message_text=f"🤫 *Sssttt...* Ada pesan bisikan rahasia nih khusus buat *@ {target_username}*.\nOrang lain dilarang ngintip ya! 😠 Simpanse aja kepo! 🤭",
+                parse_mode="Markdown"
+            )
+        )
+        
+        await bot.answer_inline_query(inline_query.id, [result], cache_time=1)
+        
+    except Exception as e:
+        print(f"Error Inline Whisper: {e}")
+
+# =========================================================
+# HANDLER UNTUK TOMBOL WHISPER (CALLBACK QUERY)
+# =========================================================
+@bot.callback_query_handler(func=lambda call: call.data == "open_whisper" or call.data.startswith("wh_"))
+async def handle_whisper_click(call):
+    user_username = (call.from_user.username or "").lower()
+    
+    if call.data.startswith("wh_"):
+        unique_id = call.data.replace("wh_", "")
+        if unique_id not in whisper_data:
+            await bot.answer_callback_query(call.id, text="Yah, pesan rahasia ini udah kedaluwarsa atau bot habis di-restart! 🥺", show_alert=True)
+            return
+        
+        target_user = whisper_data[unique_id]["target"]
+        secret_text = whisper_data[unique_id]["message"]
+        
+    else:
+        msg_id = call.message.message_id
+        if msg_id not in whisper_data:
+            await bot.answer_callback_query(call.id, text="Yah, pesan rahasia ini udah kedaluwarsa atau bot habis di-restart! 🥺", show_alert=True)
+            return
+            
+        target_user = whisper_data[msg_id]["target"]
+        secret_text = whisper_data[msg_id]["message"]
+
+    if user_username == target_user:
+        await bot.answer_callback_query(call.id, text=f"💬 Pesan Rahasia:\n\" {secret_text} \"", show_alert=True)
+    else:
+        kutipan_ejekan = [
+            "Heh kepo banget! Bukan buat kamu ya! 😠 BLEEE 😜",
+            "Idih, dibilang rahasia masih aja diklik. Hus sana! 🙄",
+            "Jangan ngintip! Nanti matanya bintitan loh! 🤭",
+            "Hayo mau nyolong informasi ya? Gak bisa! 😜☝️"
+        ]
+        await bot.answer_callback_query(call.id, text=random.choice(kutipan_ejekan), show_alert=True)
+
+# =========================================================
+# MAIN MESSAGE HANDLER TEXT (ALL MESSAGES)
+# =========================================================
 @bot.message_handler(func=lambda m: True)
 async def allmsg(m):
     txt = m.text or ""
     low = txt.lower().strip()
     user_name = m.from_user.first_name
-    OWNER_ID = 8278748114 
 
-    if low.startswith("/start") or low.startswith("/getmusic"):
+    if low.startswith("/start") or low.startswith("/getmusic") or low.startswith("/whisper"):
         return
 
     # =========================================================
-    # 0. PERINTAH DEVELOPER (.eval) - KHUSUS IJELL
+    # 0. PERINTAH DEVELOPER (.eval) - KHUSUS IJEL
     # =========================================================
     if txt.startswith(".eval"):
         if m.from_user.id != OWNER_ID:
@@ -386,6 +525,7 @@ async def allmsg(m):
             f"• Hati-hati, aku suka ikut nimbrung obrolan secara tiba-tiba meskipun gak dipanggil! 🤭\n\n"
             f"🛠 *Perintah Publik:* \n"
             f"• `/getmusic [judul]` - Cari dan unduh musik MP3 langsung dari YouTube!\n"
+            f"• `/whisper @username [pesan]` - Kirim pesan bisikan rahasia (bisa juga via inline mode ketik `@{BOTNAME} [pesan] @username`).\n"
             f"• `/info` - Cek informasi detail bot, data ID kamu, dan status server.\n"
             f"• `/mock [teks]` - Mengubah teks menjadi format ejekan Spongebob. Bisa juga dipakai dengan membalas (*reply*) pesan teman lalu ketik `/mock`.\n"
             f"• `/help` - Menampilkan menu bantuan yang sedang kamu baca ini."
@@ -447,7 +587,7 @@ async def allmsg(m):
             is_reply_to_bot = True
 
     dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low or is_reply_to_bot
-    nimbrung_random = (m.chat.type in ["group", "supergroup"]) and (random.random() < 0.10) and not is_reply_to_bot
+    nimbrung_random = (m.chat.type in ["group", "supergroup"]) and (random.random() < 0.03) and not is_reply_to_bot
 
     if dipanggil or nimbrung_random:
         clean_prompt = txt.replace("cajel", "").replace(BOTNAME, "").strip()
@@ -473,3 +613,4 @@ async def startup():
 
 if __name__ == "__main__":
     asyncio.run(startup())
+        
