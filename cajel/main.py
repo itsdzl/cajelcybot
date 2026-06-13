@@ -50,7 +50,6 @@ shared_data["ytdlp_cli"] = shutil.which("yt-dlp") is not None
 shared_data["ytdlp_available"] = shared_data["ytdlp_import"] or shared_data["ytdlp_cli"]
 
 async def send_bot_log(text):
-    """Fungsi pembantu untuk mengirim log real-time ke grup utama"""
     if shared_data["log_group_id"] != 0:
         try:
             await bot.send_message(shared_data["log_group_id"], text, parse_mode="Markdown")
@@ -60,8 +59,8 @@ async def send_bot_log(text):
 shared_data["send_log"] = send_bot_log
 
 def load_plugins():
-    """Sistem Pemuat Plugin Otomatis (Auto-loader)"""
-    plugin_folder = "plugins"
+    """Sistem Pemuat Otomatis disesuaikan ke folder cajel"""
+    plugin_folder = "cajel"  
     if not os.path.exists(plugin_folder):
         os.makedirs(plugin_folder)
         
@@ -82,13 +81,12 @@ def load_plugins():
 
 async def startup():
     me = await bot.get_me()
-    
     load_plugins()
 
     startup_msg = (
-        f"🚀 *[ONLINE]* Bot *{shared_data['name']}* (@{me.username}) berhasil aktif di server!\n"
+        f"🚀 *[ONLINE]* Bot *{shared_data['name']}* (@{me.username}) berhasil aktif!\n"
         f"• Sistem Rotasi: `{len(shared_data['api_keys'])}` API Key terdeteksi.\n"
-        f"• Fitur: Modular Plugin System (*Aktif*)."
+        f"• Fitur: Modular Folder System (*Aktif*)."
     )
     print(startup_msg)
     await send_bot_log(startup_msg)
@@ -96,3 +94,4 @@ async def startup():
 
 if __name__ == "__main__":
     asyncio.run(startup())
+        
