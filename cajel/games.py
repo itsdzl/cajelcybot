@@ -32,9 +32,9 @@ def check_wordle_colors(tebakan, jawaban):
 
 def get_soal_text(mode, word):
     # Pengingat selalu disematkan di sini
-    info = "\n\n━━━━━━━━━━━━━━\nKetik Jawabanmu Diawali dengan Titik!\n\nOrang lemah pasti mencet ini /skip (Ganti kata) | /udahan (Berhenti)"
+    info = "\n━━━━━━━━━━━━━━\nKetik Jawabanmu Diawali dengan Titik!\n\nOrang lemah pasti mencet ini /skip (Ganti kata) | /udahan (Berhenti)"
     if mode == "wordle":
-        return f"Wordle Indonesia Dimulai\n◼️◼️◼️◼️◼️{info}"
+        return f"🟩Wordle Indonesia⬛\n◼️◼️◼️◼️◼️{info}"
     elif mode == "susun":
         s = list(word.upper()); random.shuffle(s)
         return f"🧩 Susun Kata: {' '.join(s)}{info}"
@@ -162,9 +162,9 @@ def setup(bot, data):
             _, up = db["add_rewards"](m.from_user.id, m.from_user.first_name, 10, 10)
             ans = s["jawaban"]
             s["jawaban"] = get_words(data)
-            msg = f"✅ {ans.upper()} benar! (+10 Poin)\n" + get_soal_text(s["mode"], s["jawaban"])
+            msg = f"✅ {ans.upper()} benar! (+10 Poin)\n\n" + get_soal_text(s["mode"], s["jawaban"])
             await bot.reply_to(m, msg)
         else:
-            res = check_wordle_colors(tebakan, s["jawaban"]) if s["mode"] == "wordle" else "❌ Salah!"
+            res = check_wordle_colors(tebakan, s["jawaban"]) if s["mode"] == "wordle" else "❌ Jawaban Salah! Coba Lagi!"
             await bot.reply_to(m, res)
                 
