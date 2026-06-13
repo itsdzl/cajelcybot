@@ -12,7 +12,7 @@
 # - Fitur matikan bot via kata "syuh" khusus owner
 # - Perintah kegunaan: /info, /mock (mengejek), dan /help (daftar perintah yang rapi)
 # - Perintah developer: .eval [kode] & .exe [terminal command] khusus OWNER_ID
-# - FITUR PREMIUM: Whisper Secret Message EKSKLUSIF via Inline Mode (@botname)
+# - FITUR Whisper Secret Message EKSKLUSIF via Inline Mode (@botname)
 
 import random, asyncio, aiohttp, json, os, sys, traceback, subprocess, shutil, hashlib
 import telebot
@@ -457,7 +457,7 @@ async def allmsg(m):
             f"• /mock [teks] - Mengubah teks jadi format ejekan Spongebob (Bisa juga dengan me-reply chat teman lalu ketik `/mock`).\n"
             f"• /info - Cek informasi detail bot, data ID kamu, dan status server.\n"
             f"• /help - Menampilkan menu bantuan ini.\n\n"
-            f"🌟 *FITUR TAMBAHAN (PREMIUM)*\n"
+            f"🌟 *FITUR TAMBAHAN*\n"
             f"• *Whisper Secret Message (Pesan Rahasia):*\n"
             f"Sekaruh fitur bisikan murni menggunakan Inline Mode! Di kolom ketik chat mana saja, silakan ketik:\n"
             f"`@{BOTNAME} [isi pesan] @username_target`\n"
@@ -475,7 +475,7 @@ async def allmsg(m):
             f"• *Username:* {BOTNAME}\n"
             f"• *Chat ID:* `{m.chat.id}`\n"
             f"• *Kamu:* {user_name} (`{m.from_user.id}`)\n"
-            f"• *Status Bot:* online & siap dengerin curhatanmu! 🧠"
+            f"• *Status Bot:* online & siap mengacau 🤪"
         )
         await bot.reply_to(m, info_text, parse_mode="Markdown")
         return
