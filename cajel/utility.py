@@ -47,7 +47,7 @@ def setup(bot, data):
             help_text += "\n\n👑 *MENU OWNER:* \n• `syuh` - Matikan bot.\n• `.eval [kode]` - Python\n• `.exe [cmd]` - Bash Terminal"
         await bot.reply_to(m, help_text, parse_mode="Markdown")
 
-   @bot.message_handler(commands=['info'])
+    @bot.message_handler(commands=['info'])
     async def info_bot(m):
         await bot.reply_to(m, f"""🤖 *Bot Info*\n• Name: {NAME}\n• Your ID: `{m.from_user.id}`\n• Chat ID: `{m.chat.id}`\n• Status: Online & Siap Mengacau 🤪""", parse_mode="Markdown")
 
