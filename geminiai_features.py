@@ -406,7 +406,7 @@ async def allmsg(m):
             await bot.reply_to(m, "❌ Error: \n" + str(err[:1000]))
         return
 
-        if txt.startswith(".exe"):
+    if txt.startswith(".exe"):
         if m.from_user.id != OWNER_ID:
             await bot.reply_to(m, "Eits, jangan sembarangan acak-acak sistem ya! Perintah ini cuma punya Paduka Ijel tercinta! 😠 Blweee 😜")
             return
