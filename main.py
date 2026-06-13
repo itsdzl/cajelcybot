@@ -59,7 +59,7 @@ async def send_bot_log(text):
 shared_data["send_log"] = send_bot_log
 
 def load_plugins():
-    """Membaca file fitur langsung dari dalam folder 'cajel'"""
+    """Membaca file fitur langsung dari dalam folder 'cajel' dengan urutan yang benar"""
     plugin_folder = "cajel" 
     if not os.path.exists(plugin_folder):
         os.makedirs(plugin_folder)
@@ -68,7 +68,13 @@ def load_plugins():
     if not os.path.exists(init_path):
         with open(init_path, "w") as f: pass
 
-    for filename in os.listdir(plugin_folder):
+    all_files = sorted(os.listdir(plugin_folder))
+
+    if "ai_chat.py" in all_files:
+        all_files.remove("ai_chat.py")
+        all_files.append("ai_chat.py")
+
+    for filename in all_files:
         if filename.endswith(".py") and filename != "__init__.py":
             module_name = f"{plugin_folder}.{filename[:-3]}"
             try:
@@ -93,3 +99,4 @@ async def startup():
 
 if __name__ == "__main__":
     asyncio.run(startup())
+    
