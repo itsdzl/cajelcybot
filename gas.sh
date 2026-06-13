@@ -2,6 +2,6 @@
 
 while true
 do
-python geminiai.py
+python geminiai_features.py
 sleep 72
 done
