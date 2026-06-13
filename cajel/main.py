@@ -84,13 +84,6 @@ async def startup():
     me = await bot.get_me()
     
     load_plugins()
-    
-    try:
-        import geminiai_games
-        geminiai_games.register_game_handlers(bot)
-        print("✅ Game Eksternal [geminiai_games.py] berhasil dimuat.")
-    except ImportError:
-        pass
 
     startup_msg = (
         f"🚀 *[ONLINE]* Bot *{shared_data['name']}* (@{me.username}) berhasil aktif di server!\n"
