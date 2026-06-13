@@ -1,23 +1,31 @@
 # Skeleton rewritten bot for Python 3.10+
-# Reads settings including GEMINI_API_KEY by key=value.
+# Credit by @itsdzl
 # Supports:
 # - Welcome Text keren + bangga-banggain aa ijel saat di-start di Private Chat (PC)
 # - Auto-nimbrung sesekali di grup (Random reply)
 # - Menjawab saat dipanggil/dimention via Gemini AI (Sadar kalau diciptain aa ijel)
 # - SISTEM REPLY: Cukup balas pesan bot di grup, bot akan otomatis menjawab!
-# - ANTI-SPAM & HEMAT KUOTA: Cooldown 8 detik per chat + filter pesan pendek!
 # - ROTASI MULTI-API KEY: Otomatis ganti ke API Key cadangan jika API Key utama limit/error!
 # - Jauh Lebih Tangguh: Auto-Retry (Exponential Backoff) sebelum berganti key.
 # - Kepribadian menyebalkan, lucu, imut, super random, dan menggemaskan
 # - Fitur matikan bot via kata "syuh" khusus owner
 # - Perintah kegunaan: /info, /mock (mengejek), dan /help (daftar perintah)
 # - Perintah developer: .eval [kode] khusus OWNER_ID
+# - FITUR GETMUSIC: Unduh musik mp3/audio dari YouTube lewat query pencarian!
+# - ANTI-SPAM & COOLDOWN: Jeda respon 8 detik per grup + filter pesan pendek!
 
 import random, asyncio, aiohttp, json, os, sys, traceback, time
 from telebot.async_telebot import AsyncTeleBot
 
+# Coba import yt-dlp secara aman
+try:
+    import yt_dlp
+    YTDLP_AVAILABLE = True
+except ImportError:
+    YTDLP_AVAILABLE = False
+
 cfg={}
-with open("settings", "r", encoding="utf8") as f:
+with open("set", "r", encoding="utf8") as f:
     for line in f:
         if "=" in line:
             k, v = line.split("=", 1)
@@ -32,14 +40,12 @@ NAME = cfg.get("name", "cajel")
 # ---------------------------------------------------------
 API_KEYS = []
 
-# 1. Cek dari kunci utama (Mendukung pemisah koma)
 if "GEMINI_API_KEY" in cfg:
     for key in cfg["GEMINI_API_KEY"].split(","):
         clean_key = key.strip()
         if clean_key:
             API_KEYS.append(clean_key)
 
-# 2. Cek dari kunci cadangan berangka (GEMINI_API_KEY_2, GEMINI_API_KEY_3, dst.)
 for i in range(2, 6):
     key_name = f"GEMINI_API_KEY_{i}"
     if key_name in cfg:
@@ -50,15 +56,14 @@ for i in range(2, 6):
 bot = AsyncTeleBot(TOKEN)
 
 # ---------------------------------------------------------
-# SISTEM ANTI-SPAM (COOLDOWN) & FILTER HEMAT KUOTA
+# SISTEM ANTI-SPAM (COOLDOWN)
 # ---------------------------------------------------------
 last_chat_time = {}   # Menyimpan waktu respon terakhir per Chat ID
 COOLDOWN_SECONDS = 8  # Jeda minimal antar respon AI (dalam detik)
 
-# Fungsi untuk memanggil API Gemini menggunakan HTTP POST secara Asynchronous (Dengan Multi-API Key Failover)
 async def ask_gemini(prompt, user_name="User"):
     if not API_KEYS:
-        return "Gemini belum aktif. API Key kosong di file settings."
+        return "agi ucak"
 
     system_instruction = (
         f"Kamu adalah {NAME}, bot Telegram paling lucu se-Telegram, imut, tapi tingkahnya agak menyebalkan, "
@@ -70,7 +75,6 @@ async def ask_gemini(prompt, user_name="User"):
         f"Jawab dengan singkat, padat, sangat dinamis, kocak, kreatif, dan tidak kaku!"
     )
 
-    # Lakukan perulangan mencoba setiap API Key yang tersedia
     for idx, current_key in enumerate(API_KEYS):
         url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
         
@@ -100,32 +104,24 @@ async def ask_gemini(prompt, user_name="User"):
                             res_json = await response.json()
                             return res_json['candidates'][0]['content']['parts'][0]['text']
                         
-                        # Ambil pesan error ringkas agar layar Termux tidak penuh log panjang
                         error_body = await response.text()
-                        try:
-                            err_data = json.loads(error_body)
-                            err_msg = err_data.get("error", {}).get("message", "Unknown error")
-                        except Exception:
-                            err_msg = error_body[:100]
-
-                        # Jika server sibuk / limit (503 / 429), tunggu sebentar lalu coba kembali dengan key ini
+                        
                         if response.status in [503, 429, 500]:
                             if attempt < max_retries - 1:
                                 await asyncio.sleep(delay)
                                 delay *= 2
                                 continue
                             else:
-                                print(f"[ROTASI] API Key {idx+1} Gagal Quota/Limit (status {response.status}). Info: {err_msg}")
+                                print(f"[ROTASI] API Key {idx+1} Gagal (status {response.status}). Respon: {error_body}")
                                 key_failed = True
                                 break
                                 
-                        # Jika kunci mati/tidak valid, langsung ganti ke key berikutnya tanpa retry
                         elif response.status in [401, 403, 400]:
-                            print(f"[ROTASI] API Key {idx+1} Error {response.status} (Tidak Valid/Format Salah). Info: {err_msg}")
+                            print(f"[ROTASI] API Key {idx+1} Error {response.status} (Tidak Valid/Salah Format). Respon: {error_body}")
                             key_failed = True
                             break
                         else:
-                            print(f"[ROTASI] Error API {response.status} pada Key {idx+1}. Info: {err_msg}")
+                            print(f"[ROTASI] Error API {response.status} pada Key {idx+1}. Respon: {error_body}")
                             key_failed = True
                             break
             except Exception as e:
@@ -141,7 +137,49 @@ async def ask_gemini(prompt, user_name="User"):
         if key_failed:
             continue
 
-    return "Aduh, semua API Key cadanganku lagi puyeng atau limit nih beb 🥺 Coba kirim pesan lagi nanti ya!"
+    return "g mood, nanti aja ya!"
+
+# ---------------------------------------------------------
+# FUNGSI UNDUH MUSIK YOUTUBE (RUN DI EXECUTOR AGAR TIDAK BLOCKING)
+# ---------------------------------------------------------
+def download_youtube_audio(query):
+    if not YTDLP_AVAILABLE:
+        return None, "Aduh beb, library `yt-dlp` belum di-install di VPS/Termux kamu! Ketik `pip install yt-dlp` dulu ya! 😠"
+    
+    # Folder sementara untuk download
+    os.makedirs("downloads", exist_ok=True)
+    
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': 'downloads/%(title)s.%(ext)s',
+        'quiet': True,
+        'no_warnings': True,
+        'default_search': 'ytsearch',
+        'max_entries': 1,
+    }
+    
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(query, download=True)
+            if 'entries' in info and len(info['entries']) > 0:
+                video_info = info['entries'][0]
+            else:
+                video_info = info
+                
+            filename = ydl.prepare_filename(video_info)
+            # Dapatkan metadata dasar
+            title = video_info.get('title', 'Unknown Title')
+            uploader = video_info.get('uploader', 'Unknown Artist')
+            duration = video_info.get('duration', 0)
+            
+            return {
+                "path": filename,
+                "title": title,
+                "performer": uploader,
+                "duration": duration
+            }, None
+    except Exception as e:
+        return None, str(e)
 
 # =========================================================
 # HANDLER KHUSUS /START (WELCOME TEXT DI PRIVATE CHAT)
@@ -165,6 +203,56 @@ async def send_welcome(m):
     else:
         await bot.reply_to(m, "Ngapain start-start di grup? PC sini kalau berani 😠")
 
+# =========================================================
+# HANDLER PERINTAH /GETMUSIC
+# =========================================================
+@bot.message_handler(commands=['getmusic'])
+async def get_music(m):
+    query = m.text.replace("/getmusic", "").strip()
+    if not query:
+        await bot.reply_to(m, "Masukin judul lagu atau penyanyinya juga dong, beb! Contoh: `/getmusic dumes` 😠", parse_mode="Markdown")
+        return
+        
+    await bot.send_chat_action(m.chat.id, 'upload_voice')
+    status_msg = await bot.reply_to(m, "Sabar ya beb, cajel lagi cariin lagunya... 🎧")
+    
+    # Jalankan download di thread terpisah agar bot tidak nge-lag/freeze
+    loop = asyncio.get_event_loop()
+    music_data, err = await loop.run_in_executor(None, download_youtube_audio, query)
+    
+    if err:
+        await bot.edit_message_text(f"❌ Yah gagal download lagunya beb, error: {err}", m.chat.id, status_msg.message_id)
+        return
+        
+    try:
+        await bot.edit_message_text("Lagu ketemu! Lagi proses kirim yaa... 🚀", m.chat.id, status_msg.message_id)
+        
+        file_path = music_data["path"]
+        title = music_data["title"]
+        performer = music_data["performer"]
+        duration = music_data["duration"]
+        
+        # Kirim file audio ke Telegram
+        with open(file_path, "rb") as audio_file:
+            await bot.send_audio(
+                chat_id=m.chat.id,
+                audio=audio_file,
+                title=title,
+                performer=performer,
+                duration=duration,
+                reply_to_message_id=m.message_id
+            )
+            
+        # Hapus file lokal setelah dikirim agar penyimpanan server/Termux tetap hemat
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            
+        # Hapus pesan status pencarian
+        await bot.delete_message(m.chat.id, status_msg.message_id)
+        
+    except Exception as e:
+        await bot.edit_message_text(f"❌ Duh gagal ngirim audionya, error: {str(e)}", m.chat.id, status_msg.message_id)
+
 @bot.message_handler(func=lambda m: True)
 async def allmsg(m):
     txt = m.text or ""
@@ -173,20 +261,20 @@ async def allmsg(m):
     OWNER_ID = 8278748114 
     chat_id = m.chat.id
 
-    if low.startswith("/start"):
+    if low.startswith("/start") or low.startswith("/getmusic"):
         return
 
     # =========================================================
-    # 0. PERINTAH DEVELOPER (.eval) - KHUSUS OWNER
+    # 0. PERINTAH DEVELOPER (.eval) - KHUSUS IJELL
     # =========================================================
     if txt.startswith(".eval"):
         if m.from_user.id != OWNER_ID:
-            await bot.reply_to(m, "Heh tanganmu kotor ya! Gak usah sok-sokan pakai fitur dewa, kamu bukan paduka ijel! 😠 BLEEE 😜")
+            await bot.reply_to(m, "heh tanganmu kotor ya! gausa sosoan pakai fitur dewa, kamu bukan paduka ijel! 😠 BLEEE 😜")
             return
             
         cmd = txt.replace(".eval", "").strip()
         if not cmd:
-            await bot.reply_to(m, "Kodenya mana yang mau di-eval, paduka? 🤔")
+            await bot.reply_to(m, "kodenya mana yang mau di eval, paduka? 🙂‍↕️")
             return
             
         local_vars = {
@@ -220,13 +308,14 @@ async def allmsg(m):
     # =========================================================
     if low.startswith("/help"):
         help_text = (
-            f"✨ *PANDUAN UTK ANGGOTA GRUP KOCAK* ✨\n\n"
+            f"✨ *PANDUAN UTK ANGGOTA GRUP* ✨\n\n"
             f"Halo {user_name}! Aku *{NAME}*, bot paling menggemaskan tapi agak nyebelin. "
             f"Berikut adalah hal-hal yang bisa kamu lakukan bersamaku:\n\n"
             f"💬 *Interaksi AI:* \n"
-            f"• Panggil namaku (`cajel`), tag `{BOTNAME}`, atau **cukup reply chat-ku**, maka aku akan balas menggunakan kecerdasan murniku.\n"
+            f"• Panggil namaku (`cajel`) atau **cukup reply chat-ku**, maka aku akan balas menggunakan kecerdasan murniku.\n"
             f"• Hati-hati, aku suka ikut nimbrung obrolan secara tiba-tiba meskipun gak dipanggil! 🤭\n\n"
             f"🛠 *Perintah Publik:* \n"
+            f"• `/getmusic [judul]` - Cari dan unduh musik MP3 langsung dari YouTube!\n"
             f"• `/info` - Cek informasi detail bot, data ID kamu, dan status server.\n"
             f"• `/mock [teks]` - Mengubah teks menjadi format ejekan Spongebob. Bisa juga dipakai dengan membalas (*reply*) pesan teman lalu ketik `/mock`.\n"
             f"• `/help` - Menampilkan menu bantuan yang sedang kamu baca ini."
@@ -235,8 +324,8 @@ async def allmsg(m):
         if m.from_user.id == OWNER_ID:
             help_text += (
                 f"\n\n👑 *MENU RAHASIA PADUKA IJEL (OWNER):* \n"
-                f"• `syuh` - Mematikan total bot dan menghentikan sesi Termux jarak jauh.\n"
-                f"• `.eval [kode]` - Menjalankan script Python secara langsung di server via chat."
+                f"• `syuh` - Mematikan total bot dan menghentikan sesi jarak jauh.\n"
+                f"• `eval [kode]` - Menjalankan script Python secara langsung di server via chat."
             )
             
         await bot.reply_to(m, help_text, parse_mode="Markdown")
@@ -247,9 +336,9 @@ async def allmsg(m):
             f"🤖 *Bot Info* 🤖\n\n"
             f"• *Nama Bot:* {NAME}\n"
             f"• *Username:* {BOTNAME}\n"
-            f"• *Target ID:* `{m.chat.id}`\n"
+            f"• *Chat ID:* `{m.chat.id}`\n"
             f"• *Kamu:* {user_name} (`{m.from_user.id}`)\n"
-            f"• *Status:* Online & Siap mengacau! 🤪"
+            f"• *Status Bot:* online & siap mengacau! 🤪"
         )
         await bot.reply_to(m, info_text, parse_mode="Markdown")
         return
@@ -287,14 +376,13 @@ async def allmsg(m):
         if m.reply_to_message.from_user.id == bot_info.id:
             is_reply_to_bot = True
 
-    # Pengecekan pemicu panggilan AI
     dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low or is_reply_to_bot
     
-    # FILTER KUOTA: Nimbrung random diturunkan ke 3% DAN hanya merespon teks di atas 5 karakter (menghindari spam chat pendek)
+    # FILTER KUOTA: Nimbrung random hanya akan merespon teks yang panjangnya minimal 6 karakter
     nimbrung_random = (
         (m.chat.type in ["group", "supergroup"]) 
         and (len(txt.strip()) >= 6) 
-        and (random.random() < 0.03) 
+        and (random.random() < 0.10) 
         and not is_reply_to_bot
     )
 
@@ -303,11 +391,10 @@ async def allmsg(m):
         now = time.time()
         last_time = last_chat_time.get(chat_id, 0)
         
-        # Jika belum melewati jeda cooldown 8 detik, abaikan chat secara diam-diam (Kecuali PC)
+        # Jika cooldown belum lewat 8 detik, abaikan chat (Kecuali chat di PC)
         if m.chat.type != "private" and (now - last_time < COOLDOWN_SECONDS):
             return
-        
-        # Catat waktu respon terakhir
+            
         last_chat_time[chat_id] = now
 
         clean_prompt = txt.replace("cajel", "").replace(BOTNAME, "").strip()
@@ -315,7 +402,7 @@ async def allmsg(m):
             clean_prompt = "halo apa kabar"
 
         if not API_KEYS:
-            await bot.reply_to(m, "Gemini belum aktif. API Key kosong di file settings.")
+            await bot.reply_to(m, "agi ucak.")
             return
 
         await bot.send_chat_action(m.chat.id, 'typing')
