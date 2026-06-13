@@ -5,12 +5,20 @@ from telebot import types
 game_sessions = {}
 
 def get_words(data, length=None):
-    kbbi_dict = data.get("kbbi_data", {})
-    word_list = [k.lower() for k in kbbi_dict.keys() if k.strip().isalpha()]
+    kbbi_raw = data.get("kbbi_data", {})
+    
+    if isinstance(kbbi_raw, dict):
+        word_list = [k.lower() for k in kbbi_raw.keys() if k.strip().isalpha()]
+    elif isinstance(kbbi_raw, list):
+        word_list = [w.lower() for w in kbbi_raw if isinstance(w, str) and w.strip().isalpha()]
+    else:
+        word_list = []
+
     if length == 5:
         filtered = [w for w in word_list if len(w) == 5]
     else:
         filtered = word_list
+    
     return random.choice(filtered) if filtered else "gajah"
 
 def setup(bot, data):
