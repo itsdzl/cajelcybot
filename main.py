@@ -2,6 +2,7 @@ import os, sys, asyncio, shutil, importlib
 import telebot
 from telebot.async_telebot import AsyncTeleBot
 
+# 1. Membaca Konfigurasi Bot
 cfg = {}
 with open("set", "r", encoding="utf8") as f:
     for line in f:
@@ -15,6 +16,7 @@ NAME = cfg.get("name", "cajel")
 OWNER_ID = 8278748114
 LOG_GROUP_ID = int(cfg.get("log_group_id", 0))
 
+# 2. Mengumpulkan API Keys
 API_KEYS = []
 if "GEMINI_API_KEY" in cfg:
     for key in cfg["GEMINI_API_KEY"].split(","):
@@ -29,6 +31,7 @@ for i in range(2, 6):
 
 bot = AsyncTeleBot(TOKEN)
 
+# 3. Shared Data
 shared_data = {
     "cfg": cfg,
     "botname": BOTNAME,
@@ -58,8 +61,8 @@ async def send_bot_log(text):
 
 shared_data["send_log"] = send_bot_log
 
+# 4. Plugin Loader dengan Prioritas
 def load_plugins():
-    """Membaca file fitur langsung dari dalam folder 'cajel' dengan urutan yang benar"""
     plugin_folder = "cajel" 
     if not os.path.exists(plugin_folder):
         os.makedirs(plugin_folder)
@@ -70,6 +73,12 @@ def load_plugins():
 
     all_files = sorted(os.listdir(plugin_folder))
 
+    # Prioritaskan database agar selalu siap pertama kali
+    if "games_db.py" in all_files:
+        all_files.remove("games_db.py")
+        all_files.insert(0, "games_db.py")
+
+    # ai_chat selalu di posisi terakhir
     if "ai_chat.py" in all_files:
         all_files.remove("ai_chat.py")
         all_files.append("ai_chat.py")
@@ -99,4 +108,4 @@ async def startup():
 
 if __name__ == "__main__":
     asyncio.run(startup())
-    
+                                                             
