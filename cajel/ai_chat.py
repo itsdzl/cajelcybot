@@ -6,8 +6,8 @@ def setup(bot, data):
     MAX_MEMORY_LENGTH = data["max_memory_length"]
     NAME = data["name"]
     BOTNAME = data["botname"]
-
-    async def ask_gemini(chat_id, prompt, user_name="User"):
+  
+async def ask_gemini(chat_id, prompt, user_name="User"):
     if not API_KEYS:
         return "agi ucak"
 
