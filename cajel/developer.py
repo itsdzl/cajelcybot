@@ -2,6 +2,8 @@ import sys, os, asyncio, traceback, random, json, aiohttp
 
 def setup(bot, data):
     OWNER_ID = data["owner_id"]
+    BOTNAME = data["botname"]
+    NAME = data["name"]
 
     @bot.message_handler(func=lambda m: m.text and m.text.strip().lower() == "syuh")
     async def shutdown_bot(m):
@@ -22,27 +24,43 @@ def setup(bot, data):
         if not cmd:
             await bot.reply_to(m, "kodenya mana yang mau di eval, paduka? 🙂‍↕️")
             return
-        local_vars = {"bot": bot, "m": m, "asyncio": asyncio, "os": os, "sys": sys, "random": random, "aiohttp": aiohttp, "json": json, "data": data}
+
+        local_vars = {
+            "bot": bot, 
+            "m": m, 
+            "asyncio": asyncio, 
+            "os": os, 
+            "sys": sys, 
+            "random": random, 
+            "json": json, 
+            "aiohttp": aiohttp, 
+            "data": data
+        }
+        
+        await bot.send_chat_action(m.chat.id, 'typing')
         try:
             if cmd.startswith("await "):
                 clean_cmd = cmd.replace("await ", "", 1)
                 result = await eval(clean_cmd, globals(), local_vars)
-            else: result = eval(cmd, globals(), local_vars)
-            await bot.reply_to(m, f"💡 *Result:* \n`{result}`", parse_mode="Markdown")
-        except Exception:
-            err = "".join(traceback.format_exception(*sys.exc_info()))
-            await bot.reply_to(m, "❌ Error: \n" + str(err[:1000]))
+            else:
+                result = eval(cmd, globals(), local_vars)
+                
+            await bot.reply_to(m, f"<b>📥 Input:</b>\n<code>{cmd}</code>\n\n<b>📤 Output:</b>\n<code>{result}</code>", parse_mode="HTML")
+        except Exception as e:
+            error_trace = traceback.format_exc()
+            await bot.reply_to(m, f"<b>📥 Input:</b>\n<code>{cmd}</code>\n\n<b>⚠️ Error:</b>\n<pre>{error_trace}</pre>", parse_mode="HTML")
+            await data["send_log"](f"❌ *[EVAL ERROR]* Perintah: `{cmd}`\n`{str(e)}`")
 
     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".exe"))
-    async def execute_terminal(m):
+    async def execute_shell(m):
         if m.from_user.id != OWNER_ID:
-            await bot.reply_to(m, "Eits, jangan sembarangan acak-acak sistem ya! Perintah ini cuma punya Paduka Ijel tercinta! 😠 Blweee 😜")
+            await bot.reply_to(m, "perintah ini bahaya! cuma aa ijel yang bisa pakai! 🤫")
             return
         shell_cmd = m.text.replace(".exe", "").strip()
         if not shell_cmd:
-            await bot.reply_to(m, "Perintah terminalnya mana yang mau dieksekusi, Paduka? 🫨")
+            await bot.reply_to(m, "perintah terminalnya mana, paduka? 🤔")
             return
-        
+            
         await bot.send_chat_action(m.chat.id, 'typing')
         try:
             process = await asyncio.create_subprocess_shell(
@@ -69,4 +87,6 @@ def setup(bot, data):
                 
             await bot.reply_to(m, response_text, parse_mode="HTML")
         except Exception as e:
-            await bot.reply_to(m, f"❌ <b>Gagal mengeksekusi:</b> {html_escape(str(e))}", parse_mode="HTML")
+            await bot.reply_to(m, f"❌ Gagal mengeksekusi shell: `{str(e)}`")
+            await data["send_log"](f"❌ *[EXE ERROR]* Perintah: `{shell_cmd}`\n`{str(e)}`")
+            
