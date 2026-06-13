@@ -5,13 +5,15 @@
 # - Auto-nimbrung sesekali di grup (Random reply)
 # - Menjawab saat dipanggil/dimention via Gemini AI (Sadar kalau diciptain aa ijel)
 # - SISTEM REPLY: Cukup balas pesan bot di grup, bot akan otomatis menjawab!
-# - Jauh Lebih Tangguh: Auto-Retry (Exponential Backoff) jika server Google 503/429/500!
+# - ANTI-SPAM & HEMAT KUOTA: Cooldown 8 detik per chat + filter pesan pendek!
+# - ROTASI MULTI-API KEY: Otomatis ganti ke API Key cadangan jika API Key utama limit/error!
+# - Jauh Lebih Tangguh: Auto-Retry (Exponential Backoff) sebelum berganti key.
 # - Kepribadian menyebalkan, lucu, imut, super random, dan menggemaskan
 # - Fitur matikan bot via kata "syuh" khusus owner
 # - Perintah kegunaan: /info, /mock (mengejek), dan /help (daftar perintah)
 # - Perintah developer: .eval [kode] khusus OWNER_ID
 
-import random, asyncio, aiohttp, json, os, sys, traceback
+import random, asyncio, aiohttp, json, os, sys, traceback, time
 from telebot.async_telebot import AsyncTeleBot
 
 cfg={}
@@ -24,20 +26,40 @@ with open("settings", "r", encoding="utf8") as f:
 TOKEN = cfg["token"]
 BOTNAME = cfg["botname"]
 NAME = cfg.get("name", "cajel")
-API_KEY = cfg["GEMINI_API_KEY"]
+
+# ---------------------------------------------------------
+# SISTEM DETEKSI MULTI-API KEY (ROTASI)
+# ---------------------------------------------------------
+API_KEYS = []
+
+# 1. Cek dari kunci utama (Mendukung pemisah koma)
+if "GEMINI_API_KEY" in cfg:
+    for key in cfg["GEMINI_API_KEY"].split(","):
+        clean_key = key.strip()
+        if clean_key:
+            API_KEYS.append(clean_key)
+
+# 2. Cek dari kunci cadangan berangka (GEMINI_API_KEY_2, GEMINI_API_KEY_3, dst.)
+for i in range(2, 6):
+    key_name = f"GEMINI_API_KEY_{i}"
+    if key_name in cfg:
+        clean_key = cfg[key_name].strip()
+        if clean_key and clean_key not in API_KEYS:
+            API_KEYS.append(clean_key)
 
 bot = AsyncTeleBot(TOKEN)
 
-# Fungsi untuk memanggil API Gemini menggunakan HTTP POST secara Asynchronous (Dengan Auto-Retry Tangguh)
+# ---------------------------------------------------------
+# SISTEM ANTI-SPAM (COOLDOWN) & FILTER HEMAT KUOTA
+# ---------------------------------------------------------
+last_chat_time = {}   # Menyimpan waktu respon terakhir per Chat ID
+COOLDOWN_SECONDS = 8  # Jeda minimal antar respon AI (dalam detik)
+
+# Fungsi untuk memanggil API Gemini menggunakan HTTP POST secara Asynchronous (Dengan Multi-API Key Failover)
 async def ask_gemini(prompt, user_name="User"):
-    clean_key = API_KEY.strip() 
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
-    
-    headers = {
-        "Content-Type": "application/json",
-        "x-goog-api-key": clean_key
-    }
-    
+    if not API_KEYS:
+        return "Gemini belum aktif. API Key kosong di file settings."
+
     system_instruction = (
         f"Kamu adalah {NAME}, bot Telegram paling lucu se-Telegram, imut, tapi tingkahnya agak menyebalkan, "
         f"tengil, suka mengejek dengan candaan, tapi tetap menggemaskan. Kamu sedang mengobrol dengan {user_name}. "
@@ -47,44 +69,79 @@ async def ask_gemini(prompt, user_name="User"):
         f"dan gunakan ekspresi emoji lucu secara beragam dan bebas (seperti: 🤭, 😠, 😜, ☝️😋, 🥺, 🥰, 😜, 🙄) biar terasa hidup dan tidak monoton. "
         f"Jawab dengan singkat, padat, sangat dinamis, kocak, kreatif, dan tidak kaku!"
     )
-    
-    payload = {
-        "contents": [{
-            "parts": [{"text": prompt}]
-        }],
-        "systemInstruction": {
-            "parts": [{"text": system_instruction}]
+
+    # Lakukan perulangan mencoba setiap API Key yang tersedia
+    for idx, current_key in enumerate(API_KEYS):
+        url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+        
+        headers = {
+            "Content-Type": "application/json",
+            "x-goog-api-key": current_key
         }
-    }
-    
-    # Fitur Auto-Retry (Mencoba hingga 3 kali dengan jeda jika server Google sibuk/503)
-    max_retries = 3
-    delay = 1  # Detik jeda awal
-    
-    for attempt in range(max_retries):
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, headers=headers, json=payload, timeout=15) as response:
-                    if response.status == 200:
-                        res_json = await response.json()
-                        return res_json['candidates'][0]['content']['parts'][0]['text']
-                    
-                    # Jika kena limit atau server Google sedang sibuk (503/429/500), kita lakukan retry
-                    elif response.status in [503, 429, 500]:
-                        if attempt < max_retries - 1:
-                            await asyncio.sleep(delay)
-                            delay *= 2  # Jeda naik (Exponential backoff)
-                            continue
+        
+        payload = {
+            "contents": [{
+                "parts": [{"text": prompt}]
+            }],
+            "system_instruction": {
+                "parts": [{"text": system_instruction}]
+            }
+        }
+        
+        max_retries = 2
+        delay = 1
+        key_failed = False
+        
+        for attempt in range(max_retries):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(url, headers=headers, json=payload, timeout=15) as response:
+                        if response.status == 200:
+                            res_json = await response.json()
+                            return res_json['candidates'][0]['content']['parts'][0]['text']
+                        
+                        # Ambil pesan error ringkas agar layar Termux tidak penuh log panjang
+                        error_body = await response.text()
+                        try:
+                            err_data = json.loads(error_body)
+                            err_msg = err_data.get("error", {}).get("message", "Unknown error")
+                        except Exception:
+                            err_msg = error_body[:100]
+
+                        # Jika server sibuk / limit (503 / 429), tunggu sebentar lalu coba kembali dengan key ini
+                        if response.status in [503, 429, 500]:
+                            if attempt < max_retries - 1:
+                                await asyncio.sleep(delay)
+                                delay *= 2
+                                continue
+                            else:
+                                print(f"[ROTASI] API Key {idx+1} Gagal Quota/Limit (status {response.status}). Info: {err_msg}")
+                                key_failed = True
+                                break
+                                
+                        # Jika kunci mati/tidak valid, langsung ganti ke key berikutnya tanpa retry
+                        elif response.status in [401, 403, 400]:
+                            print(f"[ROTASI] API Key {idx+1} Error {response.status} (Tidak Valid/Format Salah). Info: {err_msg}")
+                            key_failed = True
+                            break
                         else:
-                            return "Aduh, server Google Gemini lagi puyeng/overload nih beb 🥺 Coba kirim pesan lagi semenit lagi ya! (Error 503)"
-                    else:
-                        return f"Error API ({response.status})"
-        except Exception as e:
-            if attempt < max_retries - 1:
-                await asyncio.sleep(delay)
-                delay *= 2
-                continue
-            return f"Koneksi Error: {str(e)}"
+                            print(f"[ROTASI] Error API {response.status} pada Key {idx+1}. Info: {err_msg}")
+                            key_failed = True
+                            break
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(delay)
+                    delay *= 2
+                    continue
+                else:
+                    print(f"[ROTASI] Koneksi Error pada Key {idx+1}: {str(e)}")
+                    key_failed = True
+                    break
+        
+        if key_failed:
+            continue
+
+    return "Aduh, semua API Key cadanganku lagi puyeng atau limit nih beb 🥺 Coba kirim pesan lagi nanti ya!"
 
 # =========================================================
 # HANDLER KHUSUS /START (WELCOME TEXT DI PRIVATE CHAT)
@@ -114,6 +171,7 @@ async def allmsg(m):
     low = txt.lower().strip()
     user_name = m.from_user.first_name
     OWNER_ID = 8278748114 
+    chat_id = m.chat.id
 
     if low.startswith("/start"):
         return
@@ -229,16 +287,34 @@ async def allmsg(m):
         if m.reply_to_message.from_user.id == bot_info.id:
             is_reply_to_bot = True
 
-    # Bot merespons jika: dichat privat, namanya disebut, username tag disebut, ATAU mereply si bot
+    # Pengecekan pemicu panggilan AI
     dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low or is_reply_to_bot
-    nimbrung_random = (m.chat.type in ["group", "supergroup"]) and (random.random() < 0.75) and not is_reply_to_bot
+    
+    # FILTER KUOTA: Nimbrung random diturunkan ke 3% DAN hanya merespon teks di atas 5 karakter (menghindari spam chat pendek)
+    nimbrung_random = (
+        (m.chat.type in ["group", "supergroup"]) 
+        and (len(txt.strip()) >= 6) 
+        and (random.random() < 0.03) 
+        and not is_reply_to_bot
+    )
 
     if dipanggil or nimbrung_random:
+        # SISTEM REM ANTI-SPAM (COOLDOWN)
+        now = time.time()
+        last_time = last_chat_time.get(chat_id, 0)
+        
+        # Jika belum melewati jeda cooldown 8 detik, abaikan chat secara diam-diam (Kecuali PC)
+        if m.chat.type != "private" and (now - last_time < COOLDOWN_SECONDS):
+            return
+        
+        # Catat waktu respon terakhir
+        last_chat_time[chat_id] = now
+
         clean_prompt = txt.replace("cajel", "").replace(BOTNAME, "").strip()
         if not clean_prompt:
             clean_prompt = "halo apa kabar"
 
-        if not API_KEY:
+        if not API_KEYS:
             await bot.reply_to(m, "Gemini belum aktif. API Key kosong di file settings.")
             return
 
