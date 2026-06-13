@@ -48,10 +48,8 @@ def setup(bot, data):
         await bot.reply_to(m, help_text, parse_mode="Markdown")
 
    @bot.message_handler(commands=['info'])
-async def info_bot(m):
-    # m.from_user.id adalah ID akun user
-    # m.chat.id adalah ID chat (bisa grup atau personal)
-    await bot.reply_to(m, f"""🤖 *Bot Info*\n• Name: {NAME}\n• Your ID: `{m.from_user.id}`\n• Chat ID: `{m.chat.id}`\n• Status: Online & Siap Mengacau 🤪""", parse_mode="Markdown")
+    async def info_bot(m):
+        await bot.reply_to(m, f"""🤖 *Bot Info*\n• Name: {NAME}\n• Your ID: `{m.from_user.id}`\n• Chat ID: `{m.chat.id}`\n• Status: Online & Siap Mengacau 🤪""", parse_mode="Markdown")
 
     @bot.message_handler(commands=['mock'])
     async def mock_text(m):
