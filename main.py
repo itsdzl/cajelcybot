@@ -13,7 +13,6 @@ with open("set", "r", encoding="utf8") as f:
 TOKEN = cfg["token"]
 BOTNAME = cfg["botname"]
 NAME = cfg.get("name", "cajel")
-# Menggunakan OWNER_ID dari file set, dipastikan integer
 OWNER_ID = int(cfg.get("OWNER_ID", 8278748114))
 LOG_GROUP_ID = int(cfg.get("log_group_id", -1004362941881))
 
@@ -30,7 +29,7 @@ for i in range(2, 6):
         clean_key = cfg[key_name].strip()
         if clean_key and clean_key not in API_KEYS: API_KEYS.append(clean_key)
 
-# 3. Memuat Data KBBI ke Memori
+# 3. Memuat Data KBBI
 KBBI_DATA = {}
 try:
     with open("dataKBBI.json", "r", encoding="utf-8") as f:
@@ -49,13 +48,28 @@ shared_data = {
     "owner_id": OWNER_ID,
     "log_group_id": LOG_GROUP_ID,
     "api_keys": API_KEYS,
-    "kbbi_data": KBBI_DATA, # Data KBBI sekarang tersedia di sini!
+    "kbbi_data": KBBI_DATA,
     "whisper_data": {},
     "chat_memories": {},
     "max_memory_length": 12
 }
 
-# (Bagian ytdlp dan log tetap sama)
+# --- FUNGSI LOGGER OTOMATIS (BARU) ---
+@bot.message_handler(func=lambda m: True)
+async def track_users(m):
+    try:
+        if not os.path.exists("users.json"):
+            with open("users.json", "w") as f: json.dump({}, f)
+            
+        with open("users.json", "r+") as f:
+            data = json.load(f)
+            if str(m.chat.id) not in data:
+                data[str(m.chat.id)] = {"type": m.chat.type, "name": m.chat.title or m.chat.first_name}
+                f.seek(0); json.dump(data, f, indent=4); f.truncate()
+    except Exception as e:
+        print(f"❌ Gagal mencatat user: {e}")
+
+# Yt-dlp setup
 try:
     import yt_dlp
     shared_data["ytdlp_import"] = True
@@ -104,4 +118,3 @@ async def startup():
 
 if __name__ == "__main__":
     asyncio.run(startup())
-        
