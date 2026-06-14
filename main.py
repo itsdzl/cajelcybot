@@ -34,7 +34,7 @@ KBBI_DATA = {}
 try:
     with open("dataKBBI.json", "r", encoding="utf-8") as f:
         KBBI_DATA = json.load(f)
-        print("✅ Data KBBI berhasil dimuat ke memori.")
+        print("✅ Data KBBI berhasil dimuat.")
 except Exception as e:
     print(f"❌ Gagal memuat dataKBBI.json: {e}")
 
@@ -42,34 +42,12 @@ bot = AsyncTeleBot(TOKEN)
 
 # 4. Shared Data
 shared_data = {
-    "cfg": cfg,
-    "botname": BOTNAME,
-    "name": NAME,
-    "owner_id": OWNER_ID,
-    "log_group_id": LOG_GROUP_ID,
-    "api_keys": API_KEYS,
-    "kbbi_data": KBBI_DATA,
-    "whisper_data": {},
-    "chat_memories": {},
-    "max_memory_length": 12
+    "cfg": cfg, "botname": BOTNAME, "name": NAME, "owner_id": OWNER_ID,
+    "log_group_id": LOG_GROUP_ID, "api_keys": API_KEYS, "kbbi_data": KBBI_DATA,
+    "whisper_data": {}, "chat_memories": {}, "max_memory_length": 12
 }
 
-# --- FUNGSI LOGGER OTOMATIS (BARU) ---
-@bot.message_handler(func=lambda m: True)
-async def track_users(m):
-    try:
-        if not os.path.exists("users.json"):
-            with open("users.json", "w") as f: json.dump({}, f)
-            
-        with open("users.json", "r+") as f:
-            data = json.load(f)
-            if str(m.chat.id) not in data:
-                data[str(m.chat.id)] = {"type": m.chat.type, "name": m.chat.title or m.chat.first_name}
-                f.seek(0); json.dump(data, f, indent=4); f.truncate()
-    except Exception as e:
-        print(f"❌ Gagal mencatat user: {e}")
-
-# Yt-dlp setup
+# Setup Yt-dlp
 try:
     import yt_dlp
     shared_data["ytdlp_import"] = True
@@ -93,13 +71,6 @@ def load_plugins():
     if not os.path.exists(plugin_folder): os.makedirs(plugin_folder)
     
     all_files = sorted(os.listdir(plugin_folder))
-    if "games_db.py" in all_files:
-        all_files.remove("games_db.py")
-        all_files.insert(0, "games_db.py")
-    if "ai_chat.py" in all_files:
-        all_files.remove("ai_chat.py")
-        all_files.append("ai_chat.py")
-
     for filename in all_files:
         if filename.endswith(".py") and filename != "__init__.py":
             module_name = f"{plugin_folder}.{filename[:-3]}"
@@ -107,9 +78,27 @@ def load_plugins():
                 module = importlib.import_module(module_name)
                 if hasattr(module, "setup"):
                     module.setup(bot, shared_data)
-                    print(f"✅ Plugin [{filename}] berhasil dimuat.")
+                    print(f"✅ Plugin [{filename}] dimuat.")
             except Exception as e:
                 print(f"❌ Gagal memuat plugin [{filename}]: {e}")
+
+# --- FUNGSI LOGGER OTOMATIS (Diletakkan di bawah agar tidak memblokir) ---
+@bot.message_handler(func=lambda m: True)
+async def track_users(m):
+    try:
+        json_path = "users.json"
+        data = {}
+        if os.path.exists(json_path):
+            with open(json_path, "r") as f:
+                try: data = json.load(f)
+                except: data = {}
+        
+        if str(m.chat.id) not in data:
+            data[str(m.chat.id)] = {"type": m.chat.type, "name": m.chat.title or m.chat.first_name}
+            with open(json_path, "w") as f:
+                json.dump(data, f, indent=4)
+    except Exception as e:
+        print(f"DEBUG TRACK ERROR: {e}")
 
 async def startup():
     load_plugins()
@@ -118,3 +107,4 @@ async def startup():
 
 if __name__ == "__main__":
     asyncio.run(startup())
+    
