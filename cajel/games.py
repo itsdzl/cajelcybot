@@ -31,7 +31,8 @@ def check_wordle_colors(tebakan, jawaban):
     return "".join(result)
 
 def get_soal_text(mode, word):
-    info = "\n━━━━━━━━━━━━━━\n(Tebak kata 5 huruf!)\n\n/skip (Ganti kata) | /udahan (Berhenti)"
+    # Pengingat dengan format teks yang Anda inginkan
+    info = "\n━━━━━━━━━━━━━━\nKetik Jawabanmu Diawali dengan Titik!\n\nOrang lemah pasti mencet ini /skip (Ganti kata) | /udahan (Berhenti)"
     if mode == "wordle":
         return f"🟩Wordle Indonesia⬛\n◼️◼️◼️◼️◼️{info}"
     elif mode == "susun":
@@ -108,7 +109,7 @@ def setup(bot, data):
     async def stop_game(m):
         if m.chat.id in game_sessions:
             del game_sessions[m.chat.id]
-            await bot.reply_to(m, "👋 Permainan dihentikan. Ketik /game kalo mau main lagi.")
+            await bot.reply_to(m, "👋 Permainan dihentikan.")
         else: await bot.reply_to(m, "Tidak ada game.")
 
     @bot.callback_query_handler(func=lambda call: call.data.startswith("game_"))
@@ -144,6 +145,7 @@ def setup(bot, data):
 
         tebakan = m.text.strip().lower()
         
+        # Bot hanya merespon jika tebakan 5 huruf
         if len(tebakan) == 5:
             if tebakan == s["jawaban"]:
                 _, up = db["add_rewards"](m.from_user.id, m.from_user.first_name, 10, 10)
@@ -154,4 +156,4 @@ def setup(bot, data):
             elif s["mode"] == "wordle":
                 res = check_wordle_colors(tebakan, s["jawaban"])
                 await bot.reply_to(m, res)
-                        
+    
