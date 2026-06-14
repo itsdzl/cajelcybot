@@ -43,7 +43,7 @@ def setup(bot, data):
             f"Lalu klik pop-up yang muncul. Pesan rahasiamu akan terkirim ke orangnyaa! 🤫"
         )
         if m.from_user.id == OWNER_ID:
-            help_text += "\n\n👑 *MENU OWNER:* \n• `syuh` - Matikan bot.\n• `.eval [kode]` - Python\n• `.exe [cmd]` - Bash Terminal"
+            help_text += "\n\n👑 *MENU OWNER:* \n• `syuh` - matikan bot.\n• `.restart` - restart bot.\n• `.hu` - info user.\n• `.update` - update bot.\n• `.bc` - broadcast pc/grup.\n• `.eval [kode]` - python\n• `.exe [cmd]` - bash terminal"
         await bot.reply_to(m, help_text, parse_mode="Markdown")
 
     @bot.message_handler(commands=['info'])
