@@ -20,7 +20,6 @@ def setup(bot, data):
             await data["send_log"](f"🔄 *[RESTART]* Bot sedang dimulai ulang.")
             os.execv(sys.executable, ['python'] + sys.argv)
 
-    # 2. Detail User (.hu)
     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".hu"))
     async def get_user_info(m):
         if m.from_user.id != OWNER_ID: return
@@ -33,9 +32,13 @@ def setup(bot, data):
             else:
                 await bot.reply_to(m, "⚠️ Format: Reply pesan user, `.hu @username`, atau `.hu <user_id>`")
                 return
-            info = (f"👤 **Detail Pengguna**\n━━━━━━━━━━━━━━\n**Nama:** {getattr(target_user, 'first_name', 'N/A')}\n"
-                    f"**User ID:** `{target_user.id}`\n**Username:** @{getattr(target_user, 'username', 'Tidak ada')}")
-            await bot.reply_to(m, info, parse_mode="Markdown")
+            
+            # Teks diperbaiki: Hapus tanda ** atau gunakan karakter biasa untuk menghindari error Markdown
+            info = (f"👤 Detail Pengguna\n━━━━━━━━━━━━━━\nNama: {getattr(target_user, 'first_name', 'N/A')}\n"
+                    f"User ID: {target_user.id}\nUsername: @{getattr(target_user, 'username', 'Tidak ada')}")
+            
+            # Hapus parse_mode="Markdown" agar pesan dikirim sebagai teks biasa
+            await bot.reply_to(m, info)
         except Exception as e: await bot.reply_to(m, f"❌ Error: {str(e)}")
 
     # 3. Update Bot
