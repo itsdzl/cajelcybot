@@ -25,21 +25,36 @@ def setup(bot, data):
         if m.from_user.id != OWNER_ID: return
         args = m.text.replace(".hu", "").strip()
         target_user = None
+        
         try:
-            if m.reply_to_message: target_user = m.reply_to_message.from_user
-            elif args.startswith("@") or args.isdigit():
-                target_user = await bot.get_chat(args if args.startswith("@") else int(args))
+            if m.reply_to_message:
+                target_user = m.reply_to_message.from_user
+            elif args:
+                # Jika user memasukkan @username, kita hapus tanda @ agar menjadi username murni
+                clean_args = args.replace("@", "")
+                
+                # Jika input adalah ID (angka), ubah ke integer
+                if clean_args.isdigit():
+                    target_user = await bot.get_chat(int(clean_args))
+                else:
+                    # Mencoba mencari user berdasarkan username
+                    target_user = await bot.get_chat(clean_args)
             else:
                 await bot.reply_to(m, "⚠️ Format: Reply pesan user, `.hu @username`, atau `.hu <user_id>`")
                 return
             
-            # Teks diperbaiki: Hapus tanda ** atau gunakan karakter biasa untuk menghindari error Markdown
-            info = (f"👤 Detail Pengguna\n━━━━━━━━━━━━━━\nNama: {getattr(target_user, 'first_name', 'N/A')}\n"
-                    f"User ID: {target_user.id}\nUsername: @{getattr(target_user, 'username', 'Tidak ada')}")
+            # Format pesan (tanpa parse_mode untuk menghindari error Markdown)
+            info = (f"👤 Detail Pengguna\n"
+                    f"━━━━━━━━━━━━━━\n"
+                    f"Nama: {getattr(target_user, 'first_name', 'N/A')}\n"
+                    f"User ID: {target_user.id}\n"
+                    f"Username: @{getattr(target_user, 'username', 'Tidak ada')}")
             
-            # Hapus parse_mode="Markdown" agar pesan dikirim sebagai teks biasa
             await bot.reply_to(m, info)
-        except Exception as e: await bot.reply_to(m, f"❌ Error: {str(e)}")
+            
+        except Exception as e:
+            # Memberikan pesan error yang lebih jelas jika gagal
+            await bot.reply_to(m, f"❌ Error: {str(e)}\nPastikan username benar atau bot memiliki akses.")
 
     # 3. Update Bot
     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".update"))
