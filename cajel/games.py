@@ -109,7 +109,7 @@ def setup(bot, data):
     async def stop_game(m):
         if m.chat.id in game_sessions:
             del game_sessions[m.chat.id]
-            await bot.reply_to(m, "👋 Permainan dihentikan.")
+            await bot.reply_to(m, "Permainan dihentikan. Tekan /game kalo mau main lagi.")
         else: await bot.reply_to(m, "Tidak ada game.")
 
     @bot.callback_query_handler(func=lambda call: call.data.startswith("game_"))
