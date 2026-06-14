@@ -31,8 +31,7 @@ def check_wordle_colors(tebakan, jawaban):
     return "".join(result)
 
 def get_soal_text(mode, word):
-    # Pengingat selalu disematkan di sini
-    info = "\n━━━━━━━━━━━━━━\nKetik Jawabanmu Diawali dengan Titik!\n\nOrang lemah pasti mencet ini /skip (Ganti kata) | /udahan (Berhenti)"
+    info = "\n━━━━━━━━━━━━━━\n(Tebak kata 5 huruf!)\n\n/skip (Ganti kata) | /udahan (Berhenti)"
     if mode == "wordle":
         return f"🟩Wordle Indonesia⬛\n◼️◼️◼️◼️◼️{info}"
     elif mode == "susun":
@@ -69,49 +68,31 @@ def setup(bot, data):
         
         elif m.from_user.id == OWNER_ID:
             args = m.text.split()
-            
-            # Perintah Reset Rank (Global atau Spesifik)
             if m.text.startswith('/resetrank'):
                 with open("cajel_players.json", "r+", encoding="utf-8") as f:
                     all_p = json.load(f)
-                    if len(args) > 1: # Reset satu user
+                    if len(args) > 1: 
                         target = args[1]
                         if target in all_p:
                             all_p[target] = {"username": all_p[target]["username"], "level": 1, "xp": 0, "poin": 0}
                             f.seek(0); json.dump(all_p, f, indent=4); f.truncate()
                             await bot.reply_to(m, f"✅ Rank user {target} di-reset.")
                         else: await bot.reply_to(m, "❌ User tidak ditemukan.")
-                    else: # Reset Global
+                    else: 
                         json.dump({}, open("cajel_players.json", "w", encoding="utf-8"))
                         await bot.reply_to(m, "✅ Seluruh peringkat di-reset.")
 
-            # Perintah Set Poin (Tambah/Kurang)
             elif m.text.startswith('/setpoin'):
                 if len(args) < 3:
-                    await bot.reply_to(m, "⚠️ Format: `/setpoin <user_id> <jumlah>`\n(Gunakan angka negatif untuk mengurangi)")
+                    await bot.reply_to(m, "⚠️ Format: `/setpoin <user_id> <jumlah>`")
                     return
-                # Kita asumsikan add_rewards bisa menerima nilai negatif atau kita manipulasi langsung
-                # Sesuai logika database yang digunakan, kita langsung update ke file
                 target, val = args[1], int(args[2])
                 with open("cajel_players.json", "r+", encoding="utf-8") as f:
                     all_p = json.load(f)
                     if target in all_p:
                         all_p[target]["poin"] += val
                         f.seek(0); json.dump(all_p, f, indent=4); f.truncate()
-                        await bot.reply_to(m, f"✅ Poin diubah sebesar {val}. Total sekarang: {all_p[target]['poin']}")
-                    else: await bot.reply_to(m, "❌ User tidak ditemukan.")
-
-            # Perintah Set Level
-            elif m.text.startswith('/setlevel'):
-                if len(args) < 3:
-                    await bot.reply_to(m, "⚠️ Format: `/setlevel <user_id> <level_baru>`")
-                    return
-                with open("cajel_players.json", "r+", encoding="utf-8") as f:
-                    all_p = json.load(f)
-                    if args[1] in all_p:
-                        all_p[args[1]]["level"] = int(args[2])
-                        f.seek(0); json.dump(all_p, f, indent=4); f.truncate()
-                        await bot.reply_to(m, f"✅ Level user {args[1]} diubah ke {args[2]}.")
+                        await bot.reply_to(m, f"✅ Poin diubah. Total sekarang: {all_p[target]['poin']}")
                     else: await bot.reply_to(m, "❌ User tidak ditemukan.")
 
     @bot.message_handler(commands=['skip'])
@@ -127,7 +108,7 @@ def setup(bot, data):
     async def stop_game(m):
         if m.chat.id in game_sessions:
             del game_sessions[m.chat.id]
-            await bot.reply_to(m, "👋 Permainan dihentikan. Pencet /game kalo mau main lagi ")
+            await bot.reply_to(m, "👋 Permainan dihentikan.")
         else: await bot.reply_to(m, "Tidak ada game.")
 
     @bot.callback_query_handler(func=lambda call: call.data.startswith("game_"))
@@ -151,20 +132,20 @@ def setup(bot, data):
                 await bot.edit_message_text(get_soal_text(m_type, w), call.message.chat.id, call.message.message_id)
         except Exception as e: print(e)
 
-    @bot.message_handler(func=lambda m: m.chat.id in game_sessions and (m.text.startswith('.') or (m.from_user.id == OWNER_ID and m.text.strip() == "*")))
+    @bot.message_handler(func=lambda m: m.chat.id in game_sessions)
     async def handle_reply(m):
         chat_id = m.chat.id
         s = game_sessions[chat_id]
-        tebakan = s["jawaban"] if (m.from_user.id == OWNER_ID and m.text.strip() == "*") else m.text[1:].strip().lower()
-        if len(tebakan) != 5:
-            await bot.reply_to(m, "❌ Jawaban harus 5 huruf!"); return
-        if tebakan == s["jawaban"]:
-            _, up = db["add_rewards"](m.from_user.id, m.from_user.first_name, 10, 10)
-            ans = s["jawaban"]
-            s["jawaban"] = get_words(data)
-            msg = f"✅ {ans.upper()} benar! (+10 Poin)\n\n" + get_soal_text(s["mode"], s["jawaban"])
-            await bot.reply_to(m, msg)
-        else:
-            res = check_wordle_colors(tebakan, s["jawaban"]) if s["mode"] == "wordle" else "❌ Jawaban Salah! Coba Lagi!"
-            await bot.reply_to(m, res)
+        tebakan = m.text.strip().lower()
+        
+        if len(tebakan) == 5:
+            if tebakan == s["jawaban"]:
+                _, up = db["add_rewards"](m.from_user.id, m.from_user.first_name, 10, 10)
+                ans = s["jawaban"]
+                s["jawaban"] = get_words(data)
+                msg = f"✅ {ans.upper()} benar! (+10 Poin)\n\n" + get_soal_text(s["mode"], s["jawaban"])
+                await bot.reply_to(m, msg)
+            elif s["mode"] == "wordle":
+                res = check_wordle_colors(tebakan, s["jawaban"])
+                await bot.reply_to(m, res)
                 
