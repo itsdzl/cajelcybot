@@ -31,8 +31,8 @@ def check_wordle_colors(tebakan, jawaban):
     return "".join(result)
 
 def get_soal_text(mode, word):
-    # Pengingat selalu disematkan di sini
-    info = "\n━━━━━━━━━━━━━━\nKetik Jawabanmu Diawali dengan Titik!\n\nOrang lemah pasti mencet ini /skip (Ganti kata) | /udahan (Berhenti)"
+    # Menggunakan teks yang diminta dengan instruksi "Ketik Jawaban 5 Huruf!"
+    info = "\n━━━━━━━━━━━━━━\nKetik Jawaban 5 Huruf!\n\nOrang lemah pasti mencet ini /skip (Ganti kata) | /udahan (Berhenti)"
     if mode == "wordle":
         return f"🟩Wordle Indonesia⬛\n◼️◼️◼️◼️◼️{info}"
     elif mode == "susun":
@@ -138,21 +138,24 @@ def setup(bot, data):
         chat_id = m.chat.id
         s = game_sessions[chat_id]
         
-        # Perintah Owner: Menampilkan jawaban dan langsung berganti soal
+        # 3 & 5: Perintah Owner untuk melihat jawaban + kirim soal baru
         if m.from_user.id == OWNER_ID and m.text.strip() == "*":
             ans = s["jawaban"]
             s["jawaban"] = get_words(data)
-            msg = f"✅ {ans.upper()} adalah jawabannya!\n\n" + get_soal_text(s["mode"], s["jawaban"])
+            # 5: Menggunakan format teks jawaban yang sama
+            msg = f"✅ {ans.upper()} benar! (+10 Poin)\n\n" + get_soal_text(s["mode"], s["jawaban"])
             await bot.reply_to(m, msg)
             return
 
         tebakan = m.text.strip().lower()
         
+        # 1 & 2: Hanya respon jika 5 huruf, jika salah tidak merespon (tidak ada else untuk salah)
         if len(tebakan) == 5:
             if tebakan == s["jawaban"]:
                 _, up = db["add_rewards"](m.from_user.id, m.from_user.first_name, 10, 10)
                 ans = s["jawaban"]
                 s["jawaban"] = get_words(data)
+                # 4: Teks saat jawaban benar
                 msg = f"✅ {ans.upper()} benar! (+10 Poin)\n\n" + get_soal_text(s["mode"], s["jawaban"])
                 await bot.reply_to(m, msg)
             elif s["mode"] == "wordle":
