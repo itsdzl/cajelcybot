@@ -67,9 +67,9 @@ def setup(bot, data):
             await bot.reply_to(m, f"✅ Berhasil broadcast ke {count} chat.")
         except Exception as e: await bot.reply_to(m, f"❌ Error: {e}")
 
-    # 5. Statistik Bot
-    @bot.message_handler(func=lambda m: m.text and m.text.startswith(".stats"))
-    async def get_stats(m):
+     # 5. Statistik Bot
+     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".stats"))
+     async def get_stats(m):
         if m.from_user.id != OWNER_ID: return
         try:
             with open("users.json", "r") as f:
@@ -78,9 +78,9 @@ def setup(bot, data):
             await bot.reply_to(m, f"📊 Statistik\n━━━━━━━━━━━━━━\n👥 Total: `{total}`\n👤 Private: `{private}`\n🏘️ Grup: `{groups}`", parse_mode="Markdown")
         except: await bot.reply_to(m, "⚠️ Data `users.json` belum tersedia.")
 
-    # 6. Eval
-    @bot.message_handler(func=lambda m: m.text and m.text.startswith(".eval"))
-    async def eval_code(m):
+     # 6. Eval
+     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".eval"))
+     async def eval_code(m):
         if m.from_user.id != OWNER_ID: return
         cmd = m.text.replace(".eval", "").strip()
         local_vars = {"bot": bot, "m": m, "asyncio": asyncio, "os": os, "data": data}
@@ -89,9 +89,9 @@ def setup(bot, data):
             await bot.reply_to(m, f"📤 Output:\n<code>{res}</code>", parse_mode="HTML")
         except Exception as e: await bot.reply_to(m, f"⚠️ Error:\n<pre>{traceback.format_exc()}</pre>", parse_mode="HTML")
 
-    # 7. Execute Shell
-    @bot.message_handler(func=lambda m: m.text and m.text.startswith(".exe"))
-    async def execute_shell(m):
+     # 7. Execute Shell
+     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".exe"))
+     async def execute_shell(m):
         if m.from_user.id != OWNER_ID: return
         cmd = m.text.replace(".exe", "").strip()
         proc = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
