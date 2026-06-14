@@ -1,9 +1,11 @@
-import sys, os, asyncio, traceback, random, json, aiohttp
+import sys, os, asyncio, traceback, json
 
 def setup(bot, data):
     OWNER_ID = data["owner_id"]
-    BOTNAME = data["botname"]
-    NAME = data["name"]
+    
+    # Fungsi pembantu untuk mengakses stats_db dari shared_data
+    def get_stats_db():
+        return data.get("stats_db", {})
 
     # 1. Shutdown & Restart
     @bot.message_handler(func=lambda m: m.text and m.text.lower() in ["syuh", ".restart"])
@@ -46,7 +48,7 @@ def setup(bot, data):
         await bot.reply_to(m, "✅ Update selesai. Restarting bot...")
         os.execv(sys.executable, ['python'] + sys.argv)
 
-    # 4. Broadcast
+    # 4. Broadcast (Menggunakan stats.json via stats_db)
     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".bc"))
     async def broadcast_msg(m):
         if m.from_user.id != OWNER_ID: return
@@ -54,11 +56,14 @@ def setup(bot, data):
         if not msg:
             await bot.reply_to(m, "⚠️ Masukkan pesan broadcast!")
             return
+        
         try:
-            with open("users.json", "r") as f:
-                users = json.load(f)
+            # Membaca file stats.json secara langsung untuk broadcast
+            with open("stats.json", "r", encoding="utf-8") as f:
+                stats_data = json.load(f)
+            
             count = 0
-            for chat_id in users.keys():
+            for chat_id in stats_data.keys():
                 try:
                     await bot.send_message(chat_id, f"📢 **Broadcast:**\n\n{msg}", parse_mode="Markdown")
                     count += 1
@@ -71,14 +76,13 @@ def setup(bot, data):
     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".stats"))
     async def get_stats(m):
         if m.from_user.id != OWNER_ID: return
-        try:
-            with open("users.json", "r") as f:
-                users = json.load(f)
-            total = len(users)
-            private = sum(1 for u in users.values() if u.get("type") == "private")
-            groups = sum(1 for u in users.values() if u.get("type") in ["group", "supergroup"])
-            await bot.reply_to(m, f"📊 **Statistik**\n━━━━━━━━━━━━━━\n👥 Total: `{total}`\n👤 Private: `{private}`\n🏘️ Grup: `{groups}`", parse_mode="Markdown")
-        except: await bot.reply_to(m, "⚠️ Data `users.json` belum tersedia.")
+        sdb = get_stats_db()
+        if not sdb:
+            await bot.reply_to(m, "⚠️ Data statistik belum dimuat.")
+            return
+        
+        stats = sdb["get_summary"]()
+        await bot.reply_to(m, f"📊 **Statistik Bot**\n━━━━━━━━━━━━━━\n👥 Total: `{stats['total']}`\n👤 Private: `{stats['private']}`\n🏘️ Grup: `{stats['groups']}`", parse_mode="Markdown")
 
     # 6. Eval
     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".eval"))
