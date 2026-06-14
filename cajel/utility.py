@@ -37,9 +37,8 @@ def setup(bot, data):
             f"• /game - Untuk bermain games dan memilih mode permainan.\n"
             f"• /info - Cek informasi bot dan server.\n\n"
             f"🌟 *FITUR TAMBAHAN*\n"
-            f"• *Whisper Secret Message (Pesan Rahasia):*\n"
-            f"Fitur bisikan murni menggunakan Inline Mode! Di kolom ketik chat mana saja.\n"
-            f"Cara Penggunaan, Silahkan Ketik:\n"
+            f"• *Whisper (Pesan Rahasia):* Kirim Pesan Rahasia di Grup!\n\n"
+            f"Cara Penggunaan, Ketik:\n\n"
             f"`@{BOTNAME} [isi pesan] @username_target`\n"
             f"Lalu klik pop-up yang muncul. Pesan rahasiamu akan terkirim ke orangnyaa! 🤫"
         )
@@ -49,7 +48,7 @@ def setup(bot, data):
 
     @bot.message_handler(commands=['info'])
     async def info_bot(m):
-        await bot.reply_to(m, f"""🤖 *Bot Info*\n• Name: {NAME}\n• Your ID: `{m.from_user.id}`\n• Chat ID: `{m.chat.id}`\n• Status: Online & Siap Mengacau 🤪""", parse_mode="Markdown")
+        await bot.reply_to(m, f"""🤖 *Bot Info*\n• Name: {NAME}\n• Your ID: `{m.from_user.id}`\n• Chat ID: `{m.chat.id}`\n• Status: Online""", parse_mode="Markdown")
 
     @bot.message_handler(commands=['mock'])
     async def mock_text(m):
