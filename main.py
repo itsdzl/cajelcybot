@@ -13,7 +13,6 @@ with open("set", "r", encoding="utf8") as f:
 TOKEN = cfg["token"]
 BOTNAME = cfg["botname"]
 NAME = cfg.get("name", "cajel")
-# Menggunakan OWNER_ID dari file set, dipastikan integer
 OWNER_ID = int(cfg.get("OWNER_ID", 8278748114))
 LOG_GROUP_ID = int(cfg.get("log_group_id", -1004362941881))
 
@@ -49,13 +48,12 @@ shared_data = {
     "owner_id": OWNER_ID,
     "log_group_id": LOG_GROUP_ID,
     "api_keys": API_KEYS,
-    "kbbi_data": KBBI_DATA, # Data KBBI sekarang tersedia di sini!
+    "kbbi_data": KBBI_DATA,
     "whisper_data": {},
     "chat_memories": {},
     "max_memory_length": 12
 }
 
-# (Bagian ytdlp dan log tetap sama)
 try:
     import yt_dlp
     shared_data["ytdlp_import"] = True
@@ -79,9 +77,13 @@ def load_plugins():
     if not os.path.exists(plugin_folder): os.makedirs(plugin_folder)
     
     all_files = sorted(os.listdir(plugin_folder))
-    if "games_db.py" in all_files:
-        all_files.remove("games_db.py")
-        all_files.insert(0, "games_db.py")
+    # Pastikan database dimuat duluan
+    prioritas = ["games_db.py", "stats_db.py"]
+    for p in reversed(prioritas):
+        if p in all_files:
+            all_files.remove(p)
+            all_files.insert(0, p)
+            
     if "ai_chat.py" in all_files:
         all_files.remove("ai_chat.py")
         all_files.append("ai_chat.py")
@@ -97,6 +99,16 @@ def load_plugins():
             except Exception as e:
                 print(f"❌ Gagal memuat plugin [{filename}]: {e}")
 
+# Fungsi Tracking untuk Stats
+@bot.message_handler(func=lambda m: True)
+async def track_users(m):
+    try:
+        # Menggunakan stats_db yang sudah di-load oleh plugin loader
+        if "stats_db" in shared_data:
+            shared_data["stats_db"]["update_chat"](m.chat.id, m.chat.type, m.chat.title or m.chat.first_name)
+    except Exception as e:
+        print(f"DEBUG TRACK ERROR: {e}")
+
 async def startup():
     load_plugins()
     print(f"🚀 Bot {shared_data['name']} aktif!")
@@ -104,4 +116,3 @@ async def startup():
 
 if __name__ == "__main__":
     asyncio.run(startup())
-        
