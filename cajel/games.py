@@ -65,7 +65,7 @@ def setup(bot, data):
     async def admin_handler(m):
         if m.text.startswith('/rank'):
             p = db["get_player"](m.from_user.id, m.from_user.first_name)
-            await bot.reply_to(m, f"👤 {p['username']} | Level: {p['level']} | XP: {p['xp']} | Poin: {p['poin']}")
+            await bot.reply_to(m, f"👤 {p['username']} | Poin: {p['poin']}")
         
         elif m.from_user.id == OWNER_ID:
             args = m.text.split()
@@ -137,7 +137,7 @@ def setup(bot, data):
             if call.data == "game_leaderboard":
                 top = db["get_leaderboard"]()
                 text = "🏆 Top 10 Global 🏆\n\n" + "\n".join(
-                    [f"{i}. {p[1]['username']} | Lvl: {p[1]['level']} | Poin: {p[1]['poin']}" for i, p in enumerate(top, 1)])
+                    [f"{i}. {p[1]['username']} | Poin: {p[1]['poin']}" for i, p in enumerate(top, 1)])
                 await bot.edit_message_text(text, call.message.chat.id, call.message.message_id, reply_markup=types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("🔙 Kembali", callback_data="game_back")))
 
             elif call.data == "game_back":
