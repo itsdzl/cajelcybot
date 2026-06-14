@@ -108,7 +108,7 @@ def setup(bot, data):
     async def stop_game(m):
         if m.chat.id in game_sessions:
             del game_sessions[m.chat.id]
-            await bot.reply_to(m, "👋 Permainan dihentikan.")
+            await bot.reply_to(m, "👋 Permainan dihentikan. Ketik /game kalo mau main lagi.")
         else: await bot.reply_to(m, "Tidak ada game.")
 
     @bot.callback_query_handler(func=lambda call: call.data.startswith("game_"))
@@ -136,6 +136,12 @@ def setup(bot, data):
     async def handle_reply(m):
         chat_id = m.chat.id
         s = game_sessions[chat_id]
+        
+        # Perintah Owner
+        if m.from_user.id == OWNER_ID and m.text.strip() == "*":
+            await bot.reply_to(m, f"🔑 Jawaban: {s['jawaban'].upper()}")
+            return
+
         tebakan = m.text.strip().lower()
         
         if len(tebakan) == 5:
@@ -148,4 +154,4 @@ def setup(bot, data):
             elif s["mode"] == "wordle":
                 res = check_wordle_colors(tebakan, s["jawaban"])
                 await bot.reply_to(m, res)
-                
+                        
