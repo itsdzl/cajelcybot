@@ -58,13 +58,6 @@ except Exception as e:
 # Inisialisasi bot asinkronus
 bot = AsyncTeleBot(TOKEN)
 
-# =====================================================================
-# MONKEY PATCH: Memperbaiki Bug Bawaan 'ytdlp_available' TeleBot Async
-# =====================================================================
-if not hasattr(bot, 'ytdlp_available'):
-    bot.ytdlp_available = False
-# =====================================================================
-
 # 4. Shared Data
 shared_data = {
     "cfg": cfg,
@@ -87,6 +80,14 @@ shared_data = {
     "chat_memories": {},
     "max_memory_length": 12
 }
+
+try:
+    import yt_dlp
+    shared_data["ytdlp_import"] = True
+except ImportError:
+    shared_data["ytdlp_import"] = False
+shared_data["ytdlp_cli"] = shutil.which("yt-dlp") is not None
+shared_data["ytdlp_available"] = shared_data["ytdlp_import"] or shared_data["ytdlp_cli"]
 
 async def send_bot_log(text):
     if shared_data["log_group_id"] != 0:
