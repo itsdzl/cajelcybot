@@ -5,9 +5,9 @@ from telebot.async_telebot import AsyncTeleBot
 from cajel import stats_db  # Diubah agar mengambil dari folder cajel
 
 # ==========================================
-# SYSTEM LOGGING CONFIGURATION (DITAMBAHKAN)
+# SYSTEM LOGGING CONFIGURATION
 # ==========================================
-# Konfigurasi agar semua error internal bot & telebot otomatis tercetak di terminal
+# Konfigurasi agar semua error internal bot otomatis tercetak di terminal
 logging.basicConfig(
     level=logging.INFO,
     format="[%(asctime)s] [%(levelname)s] %(name)s: %(message)s",
@@ -17,8 +17,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger("CajelBot")
 
-# Aktifkan logger internal telebot agar mencetak error handler ke terminal
-telebot.logger.setLevel(logging.INFO)
+# Matikan spam "Received new updates" dengan menaikkan level ke WARNING
+# Ini akan menyembunyikan log INFO biasa tetapi tetap menampilkan ERROR jika bot crash
+telebot.logger.setLevel(logging.WARNING)
 
 # 1. Membaca Konfigurasi Bot
 cfg = {}
@@ -54,7 +55,15 @@ try:
 except Exception as e:
     logger.error(f"❌ Gagal memuat dataKBBI.json: {e}")
 
+# Inisialisasi bot asinkronus
 bot = AsyncTeleBot(TOKEN)
+
+# =====================================================================
+# MONKEY PATCH: Memperbaiki Bug Bawaan 'ytdlp_available' TeleBot Async
+# =====================================================================
+if not hasattr(bot, 'ytdlp_available'):
+    bot.ytdlp_available = False
+# =====================================================================
 
 # 4. Shared Data
 shared_data = {
@@ -113,7 +122,6 @@ def load_plugins():
                     module.setup(bot, shared_data)
                     logger.info(f"✅ Plugin [{filename}] berhasil dimuat.")
             except Exception as e:
-                # PERBAIKAN: Sekarang jika plugin gagal dimuat, traceback lengkap akan langsung tercetak di terminal!
                 logger.error(f"❌ Gagal memuat plugin [{filename}]: {e}")
                 traceback.print_exc()
 
@@ -130,3 +138,4 @@ if __name__ == "__main__":
     except Exception as e:
         logger.critical(f"Bot crash tidak terduga: {e}")
         traceback.print_exc()
+    
