@@ -110,12 +110,12 @@ def setup(bot, data):
         try:
             user_id = int(m.text.split()[1])
 
-        if get_stats_db()["ban_user"](user_id):
-            await bot.reply_to(m, f"✅ User {user_id} diban.")
-        else:
-            await bot.reply_to(m, "❌ User tidak ditemukan.")
-    except:
-        await bot.reply_to(m, "⚠️ Format: .ban <user_id>")
+            if get_stats_db()["ban_user"](user_id):
+                await bot.reply_to(m, f"✅ User {user_id} diban.")
+            else:
+                await bot.reply_to(m, "❌ User tidak ditemukan.")
+        except:
+            await bot.reply_to(m, "⚠️ Format: .ban <user_id>")
 
 
     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".unban "))
