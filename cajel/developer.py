@@ -148,7 +148,7 @@ def setup(bot, data):
         text = "🚫 Ban List\n\n"
 
         for uid, info in banned.items():
-        text += f"{info.get('name','Unknown')} ({uid})\n"
+            text += f"{info.get('name','Unknown')} ({uid})\n"
 
         await bot.reply_to(m, text)
     
