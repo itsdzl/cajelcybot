@@ -7,6 +7,10 @@ def setup(bot, data):
     NAME = data["name"]
     BOTNAME = data["botname"]
 
+    def get_stats_db():
+        return data.get("stats_db", {})
+    
+
     async def ask_gemini(chat_id, prompt, user_name="User"):
         if not API_KEYS: return "agi ucak"
         if chat_id not in chat_memories: chat_memories[chat_id] = []
