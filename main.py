@@ -14,8 +14,8 @@ with open("set", "r", encoding="utf8") as f:
 TOKEN = cfg["token"]
 BOTNAME = cfg["botname"]
 NAME = cfg.get("name", "cajel")
-OWNER_ID = int(cfg.get("OWNER_ID", 8278748114))
-LOG_GROUP_ID = int(cfg.get("log_group_id", -1004362941881))
+OWNER_ID = cfg["owner_id")
+LOG_GROUP_ID = cfg["log_group_id")
 
 # 2. Mengumpulkan API Keys
 API_KEYS = []
