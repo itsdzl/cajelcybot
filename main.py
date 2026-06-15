@@ -1,15 +1,36 @@
-import os, sys, asyncio, shutil, importlib, json
+import os, sys, asyncio, shutil, importlib, json, traceback
+import logging
 import telebot
 from telebot.async_telebot import AsyncTeleBot
 from cajel import stats_db  # Diubah agar mengambil dari folder cajel
 
+# ==========================================
+# SYSTEM LOGGING CONFIGURATION (DITAMBAHKAN)
+# ==========================================
+# Konfigurasi agar semua error internal bot & telebot otomatis tercetak di terminal
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger("CajelBot")
+
+# Aktifkan logger internal telebot agar mencetak error handler ke terminal
+telebot.logger.setLevel(logging.INFO)
+
 # 1. Membaca Konfigurasi Bot
 cfg = {}
-with open("set", "r", encoding="utf8") as f:
-    for line in f:
-        if "=" in line:
-            k, v = line.split("=", 1)
-            cfg[k.strip()] = v.strip()
+try:
+    with open("set", "r", encoding="utf8") as f:
+        for line in f:
+            if "=" in line:
+                k, v = line.split("=", 1)
+                cfg[k.strip()] = v.strip()
+except Exception as e:
+    logger.critical(f"Gagal membaca file konfigurasi 'set': {e}")
+    sys.exit(1)
 
 TOKEN = cfg["token"]
 BOTNAME = cfg["botname"]
@@ -29,9 +50,9 @@ KBBI_DATA = {}
 try:
     with open("dataKBBI.json", "r", encoding="utf-8") as f:
         KBBI_DATA = json.load(f)
-        print("✅ Data KBBI berhasil dimuat ke memori.")
+        logger.info("✅ Data KBBI berhasil dimuat ke memori.")
 except Exception as e:
-    print(f"❌ Gagal memuat dataKBBI.json: {e}")
+    logger.error(f"❌ Gagal memuat dataKBBI.json: {e}")
 
 bot = AsyncTeleBot(TOKEN)
 
@@ -63,7 +84,7 @@ async def send_bot_log(text):
         try:
             await bot.send_message(shared_data["log_group_id"], text, parse_mode="Markdown")
         except Exception as e:
-            print(f"[LOG ERROR] Gagal mengirim log: {e}")
+            logger.error(f"[LOG ERROR] Gagal mengirim log ke grup: {e}")
 
 shared_data["send_log"] = send_bot_log
 
@@ -90,14 +111,22 @@ def load_plugins():
                 module = importlib.import_module(module_name)
                 if hasattr(module, "setup"):
                     module.setup(bot, shared_data)
-                    print(f"✅ Plugin [{filename}] berhasil dimuat.")
+                    logger.info(f"✅ Plugin [{filename}] berhasil dimuat.")
             except Exception as e:
-                print(f"❌ Gagal memuat plugin [{filename}]: {e}")
+                # PERBAIKAN: Sekarang jika plugin gagal dimuat, traceback lengkap akan langsung tercetak di terminal!
+                logger.error(f"❌ Gagal memuat plugin [{filename}]: {e}")
+                traceback.print_exc()
+
 async def startup():
     load_plugins()
-    print(f"🚀 Bot {shared_data['name']} aktif!")
+    logger.info(f"🚀 Bot {shared_data['name']} aktif!")
     await bot.infinity_polling()
 
 if __name__ == "__main__":
-    asyncio.run(startup())
-    
+    try:
+        asyncio.run(startup())
+    except KeyboardInterrupt:
+        logger.info("Bot dihentikan secara manual (KeyboardInterrupt).")
+    except Exception as e:
+        logger.critical(f"Bot crash tidak terduga: {e}")
+        traceback.print_exc()
