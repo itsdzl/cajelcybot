@@ -164,35 +164,40 @@ def setup(bot, data):
         await bot.reply_to(m, text, parse_mode="Markdown")
 
     
-    # 6. Eval
-    @bot.message_handler(func=lambda m: m.text and m.text.startswith(".eval"))
+    # 6. Eval (Versi EVAL murni yang stabil, mendukung await, asinkronus, dan anti-crash)
+    @bot.message_handler(func=lambda m: m.text and (m.text.startswith(".eval ") or m.text == ".eval"))
     async def eval_code(m):
         if m.from_user.id != OWNER_ID: return
-        cmd = m.text.replace(".eval", "").strip()
+        
+        # Mengambil input dengan aman menggunakan slicing indeks [5:] agar kata .eval di dalam input tidak terhapus
+        cmd = m.text[5:].strip() if m.text.startswith(".eval ") else ""
         if not cmd:
             await bot.reply_to(m, "⚠️ Masukkan kode yang ingin di-eval.")
             return
             
-        # Potong kata 'await ' di awal perintah jika ditulis oleh owner
+        # Bersihkan awalan kata 'await ' agar fungsi eval() bawaan tidak mengalami SyntaxError saat kompilasi awal
         is_await = False
         if cmd.startswith("await "):
             cmd = cmd[6:].strip()
             is_await = True
 
         local_vars = {"bot": bot, "m": m, "asyncio": asyncio, "os": os, "data": data}
+        
         try:
-            # Evaluasi ekspresi dasar secara sinkron dahulu
-            res = eval(cmd, globals(), local_vars)
+            # Kompilasi ekspresi menjadi objek kode eval python resmi
+            compiled_code = compile(cmd, "<string>", "eval")
+            res = eval(compiled_code, globals(), local_vars)
             
-            # Jika hasil evaluasi berupa objek coroutine (bisa di-await), lakukan await di sini
+            # Jika merupakan fungsi asinkron / coroutine / awaitable, selesaikan dengan await
             if is_await or inspect.iscoroutine(res) or inspect.isawaitable(res):
                 res = await res
                 
-            # Bersihkan tag HTML ilegal agar tidak memicu crash pengiriman pesan Telegram
+            # Escaping HTML secara ketat agar pengiriman bot ke Telegram tidak gagal senyap
             safe_res = html.escape(str(res))
             await bot.reply_to(m, f"📤 Output:\n<code>{safe_res}</code>", parse_mode="HTML")
+            
         except Exception:
-            # Bersihkan pula teks error traceback agar aman dikirim dengan parse_mode="HTML"
+            # Jika gagal mengevaluasi, tangkap stacktrace dan bersihkan untuk parse HTML agar aman terkirim
             safe_err = html.escape(traceback.format_exc())
             await bot.reply_to(m, f"⚠️ Error:\n<pre>{safe_err}</pre>", parse_mode="HTML")
 
