@@ -100,6 +100,56 @@ def setup(bot, data):
         stats = sdb["get_summary"]()
         await bot.reply_to(m, f"📊 **Statistik Bot**\n━━━━━━━━━━━━━━\n👥 Total: `{stats['total']}`\n👤 Private: `{stats['private']}`\n🏘️ Grup: `{stats['groups']}`", parse_mode="Markdown")
 
+    @bot.message_handler(func=lambda m: m.text and m.text.startswith(".ban "))
+    async def ban_user_cmd(m):
+        if m.from_user.id != OWNER_ID:
+            return
+
+        try:
+            user_id = int(m.text.split()[1])
+
+        if get_stats_db()["ban_user"](user_id):
+            await bot.reply_to(m, f"✅ User {user_id} diban.")
+        else:
+            await bot.reply_to(m, "❌ User tidak ditemukan.")
+    except:
+        await bot.reply_to(m, "⚠️ Format: .ban <user_id>")
+
+
+    @bot.message_handler(func=lambda m: m.text and m.text.startswith(".unban "))
+async def unban_user_cmd(m):
+    if m.from_user.id != OWNER_ID:
+        return
+
+    try:
+        user_id = int(m.text.split()[1])
+
+        if get_stats_db()["unban_user"](user_id):
+            await bot.reply_to(m, f"✅ User {user_id} di-unban.")
+        else:
+            await bot.reply_to(m, "❌ User tidak ditemukan.")
+        except:
+            await bot.reply_to(m, "⚠️ Format: .unban <user_id>")
+
+
+    @bot.message_handler(func=lambda m: m.text == ".banlist")
+    async def banlist_cmd(m):
+        if m.from_user.id != OWNER_ID:
+            return
+
+        banned = get_stats_db()["get_banlist"]()
+
+        if not banned:
+            await bot.reply_to(m, "✅ Tidak ada user diban.")
+            return
+
+        text = "🚫 Ban List\n\n"
+
+        for uid, info in banned.items():
+        text += f"{info.get('name','Unknown')} ({uid})\n"
+
+        await bot.reply_to(m, text)
+    
     # 6. Eval
     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".eval"))
     async def eval_code(m):
