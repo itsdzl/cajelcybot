@@ -164,41 +164,53 @@ def setup(bot, data):
         await bot.reply_to(m, text, parse_mode="Markdown")
 
     
-    # 6. Eval (Versi EVAL murni yang stabil, mendukung await, asinkronus, dan anti-crash)
+     # 6. Eval (EVAL murni bawaan, asinkronus otomatis dengan cetakan terminal log)
     @bot.message_handler(func=lambda m: m.text and (m.text.startswith(".eval ") or m.text == ".eval"))
     async def eval_code(m):
         if m.from_user.id != OWNER_ID: return
         
-        # Mengambil input dengan aman menggunakan slicing indeks [5:] agar kata .eval di dalam input tidak terhapus
-        cmd = m.text[5:].strip() if m.text.startswith(".eval ") else ""
+        cmd = m.text[6:].strip() if m.text.startswith(".eval ") else ""
         if not cmd:
             await bot.reply_to(m, "⚠️ Masukkan kode yang ingin di-eval.")
             return
-            
-        # Bersihkan awalan kata 'await ' agar fungsi eval() bawaan tidak mengalami SyntaxError saat kompilasi awal
+
         is_await = False
         if cmd.startswith("await "):
             cmd = cmd[6:].strip()
             is_await = True
 
-        local_vars = {"bot": bot, "m": m, "asyncio": asyncio, "os": os, "data": data}
+        # Memasukkan html dan inspect ke dalam local_vars agar bisa dipanggil juga dari dalam perintah .eval
+        local_vars = {
+            "bot": bot, 
+            "m": m, 
+            "asyncio": asyncio, 
+            "os": os, 
+            "data": data,
+            "html": html,
+            "inspect": inspect
+        }
         
         try:
-            # Kompilasi ekspresi menjadi objek kode eval python resmi
-            compiled_code = compile(cmd, "<string>", "eval")
-            res = eval(compiled_code, globals(), local_vars)
+            # Jalankan evaluasi
+            res = eval(cmd, globals(), local_vars)
             
-            # Jika merupakan fungsi asinkron / coroutine / awaitable, selesaikan dengan await
+            # Jika objek berupa coroutine, selesaikan secara asinkron
             if is_await or inspect.iscoroutine(res) or inspect.isawaitable(res):
                 res = await res
                 
-            # Escaping HTML secara ketat agar pengiriman bot ke Telegram tidak gagal senyap
+            # Cetak ke terminal
+            print(f"\n[EVAL SUCCESS] Input: {cmd}\nOutput: {res}\n")
+            
             safe_res = html.escape(str(res))
             await bot.reply_to(m, f"📤 Output:\n<code>{safe_res}</code>", parse_mode="HTML")
             
         except Exception:
-            # Jika gagal mengevaluasi, tangkap stacktrace dan bersihkan untuk parse HTML agar aman terkirim
-            safe_err = html.escape(traceback.format_exc())
+            # Cetak error ke terminal
+            err_trace = traceback.format_exc()
+            print(f"\n[EVAL ERROR] Input: {cmd}\nDetail Error:\n{err_trace}", file=sys.stderr)
+            
+            # Escape HTML agar aman dikirim ke Telegram
+            safe_err = html.escape(err_trace)
             await bot.reply_to(m, f"⚠️ Error:\n<pre>{safe_err}</pre>", parse_mode="HTML")
 
     # 7. Execute Shell
