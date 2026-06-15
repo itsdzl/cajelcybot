@@ -108,14 +108,17 @@ def setup(bot, data):
             return
 
         try:
+            # Mengambil ID user dari argumen perintah (.ban 123456)
             user_id = int(m.text.split()[1])
+            stats = get_stats_db()
 
-            if get_stats_db()["ban_user"](user_id):
-                await bot.reply_to(m, f"✅ User {user_id} diban.")
+            # Menjalankan fungsi ban_user dari database
+            if stats and stats.get("ban_user") and stats["ban_user"](user_id):
+                await bot.reply_to(m, f"✅ User `{user_id}` berhasil diban.")
             else:
-                await bot.reply_to(m, "❌ User tidak ditemukan.")
+                await bot.reply_to(m, "❌ Gagal memban. User tidak ditemukan di database.")
         except:
-            await bot.reply_to(m, "⚠️ Format: .ban <user_id>")
+            await bot.reply_to(m, "⚠️ Format salah! Gunakan: `.ban <user_id>`")
 
 
     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".unban "))
@@ -125,13 +128,15 @@ def setup(bot, data):
 
         try:
             user_id = int(m.text.split()[1])
+            stats = get_stats_db()
 
-            if get_stats_db()["unban_user"](user_id):
-                await bot.reply_to(m, f"✅ User {user_id} di-unban.")
+            # Menjalankan fungsi unban_user dari database
+            if stats and stats.get("unban_user") and stats["unban_user"](user_id):
+                await bot.reply_to(m, f"✅ User `{user_id}` berhasil di-unban.")
             else:
-                await bot.reply_to(m, "❌ User tidak ditemukan.")
+                await bot.reply_to(m, "❌ Gagal meng-unban. User tidak ditemukan di database.")
         except:
-            await bot.reply_to(m, "⚠️ Format: .unban <user_id>")
+            await bot.reply_to(m, "⚠️ Format salah! Gunakan: `.unban <user_id>`")
 
 
     @bot.message_handler(func=lambda m: m.text == ".banlist")
@@ -139,18 +144,25 @@ def setup(bot, data):
         if m.from_user.id != OWNER_ID:
             return
 
-        banned = get_stats_db()["get_banlist"]()
-
-        if not banned:
-            await bot.reply_to(m, "✅ Tidak ada user diban.")
+        stats = get_stats_db()
+        if not stats or not stats.get("get_banlist"):
+            await bot.reply_to(m, "❌ Fitur database tidak tersedia.")
             return
 
-        text = "🚫 Ban List\n\n"
+        # Mengambil list user yang sedang diban
+        banned_users = stats["get_banlist"]()
 
-        for uid, info in banned.items():
-            text += f"{info.get('name','Unknown')} ({uid})\n"
+        if not banned_users:
+            await bot.reply_to(m, "✅ Bersih! Tidak ada user yang sedang diban.")
+            return
 
-        await bot.reply_to(m, text)
+        text = "🚫 *Daftar User Diban:*\n\n"
+        for uid, info in banned_users.items():
+            name = info.get("name", "Unknown")
+            text += f"👤 {name} \n└ ID: `{uid}`\n"
+
+        await bot.reply_to(m, text, parse_mode="Markdown")
+
     
     # 6. Eval
     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".eval"))
