@@ -76,7 +76,9 @@ def setup(bot, data):
             return
         
         try:
-            stats = get_stats_db()users = stats"get_all_users"
+            stats = get_stats_db()
+            users = stats"get_all_users"
+            
             count = 0
 
             for chat_id in users.keys():
