@@ -68,6 +68,12 @@ def load_plugins():
     if not os.path.exists(plugin_folder): os.makedirs(plugin_folder)
     
     all_files = sorted(os.listdir(plugin_folder))
+    prioritas = ["games_db.py", "stats_db.py"]
+    for db_file in prioritas:
+        if db_file in all_files:
+            all_files.remove(db_file)
+            all_files.insert(0, db_file)
+
     for filename in all_files:
         if filename.endswith(".py") and filename != "__init__.py":
             module_name = f"{plugin_folder}.{filename[:-3]}"
@@ -78,7 +84,6 @@ def load_plugins():
                     print(f"✅ Plugin [{filename}] berhasil dimuat.")
             except Exception as e:
                 print(f"❌ Gagal memuat plugin [{filename}]: {e}")
-
 async def startup():
     load_plugins()
     print(f"🚀 Bot {shared_data['name']} aktif!")
