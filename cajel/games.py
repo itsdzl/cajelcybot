@@ -6,6 +6,9 @@ from telebot import types
 
 game_sessions = {}
 
+def get_stats_db():
+        return data.get("stats_db", {})
+    
 def get_words(data, length=5):
     kbbi_raw = data.get("kbbi_data", {})
     if isinstance(kbbi_raw, dict):
@@ -49,6 +52,9 @@ def setup(bot, data):
 
     @bot.message_handler(commands=['game'])
     async def game_menu(m):
+        stats_db = get_stats_db()
+        if stats_db and stats_db.get("is_banned") and stats_db["is_banned"](str(m.from_user.id)): 
+            return 
         if m.chat.id in game_sessions:
             await bot.reply_to(m, "❌ ada game yang lagi berjalan, ketik /udahan dulu baru mulai lagi.")
             return
