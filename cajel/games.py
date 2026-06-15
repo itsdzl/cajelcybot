@@ -104,6 +104,9 @@ def setup(bot, data):
 
     @bot.message_handler(commands=['skip'])
     async def skip_game(m):
+        stats_db = get_stats_db()
+        if stats_db and stats_db.get("is_banned") and stats_db["is_banned"](str(m.from_user.id)): 
+            return
         if m.chat.id in game_sessions:
             s = game_sessions[m.chat.id]
             old = s["jawaban"]
@@ -113,7 +116,10 @@ def setup(bot, data):
 
     @bot.message_handler(commands=['udahan'])
     async def stop_game(m):
-        if m.chat.id in game_sessions:
+        stats_db = get_stats_db()
+        if stats_db and stats_db.get("is_banned") and stats_db["is_banned"](str(m.from_user.id)): 
+            return
+        if m.chat.id in game_sessions:stats_db = get_stats_db()
             del game_sessions[m.chat.id]
             await bot.reply_to(m, "Permainan dihentikan. Tekan /game kalo mau main lagi.")
         else: await bot.reply_to(m, "Tidak ada game.")
