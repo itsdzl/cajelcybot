@@ -68,11 +68,15 @@ def load_plugins():
     if not os.path.exists(plugin_folder): os.makedirs(plugin_folder)
     
     all_files = sorted(os.listdir(plugin_folder))
-    prioritas = ["games_db.py", "stats_db.py"]
-    for db_file in prioritas:
+    prioritas_db = ["games_db.py", "stats_db.py"]
+    for db_file in prioritas_db:
         if db_file in all_files:
             all_files.remove(db_file)
             all_files.insert(0, db_file)
+
+        if "ai_chat.py" in all_files:
+            all_files.remove("ai_chat.py")
+            all_files.append("ai_chat.py")
 
     for filename in all_files:
         if filename.endswith(".py") and filename != "__init__.py":
