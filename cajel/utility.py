@@ -23,7 +23,7 @@ def setup(bot, data):
     async def handle_bot_added(update):
         if update.new_chat_member.status == "member" and update.old_chat_member.status in ["left", "kicked"]:
             await data["send_log"](f"📥 *[BOT MASUK GRUP BARU]*\n• *Grup:* {update.chat.title}\n• *ID:* `{update.chat.id}`")
-            welcome = f"🎉 *HALO SEMUANYA! CAJEL DATANG!!* 🤪🤙\n\nAku bot lucu imut dan menggemaskan ciptaan mutlak *aa ijel yang ganteng sedunia*! ketik `cajel` untuk ngobrol!"
+            welcome = f"🎉 *HALO SEMUANYA! CAJEL DATANG!!* 🤪🤙\n\nAku bot lucu imut dan menggemaskan se telegram raya! jadiin cajel admin dulu biar bisa pake semua fitur yaa...\npanggil aku ketik `cajel` untuk ngobrol atau /help untuk melihat fitur fitur cajel."
             await bot.send_message(update.chat.id, welcome, parse_mode="Markdown")
 
     @bot.message_handler(commands=['help'])
