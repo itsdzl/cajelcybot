@@ -59,21 +59,30 @@ def setup(bot, data):
 
     @bot.message_handler(func=lambda m: True)
     async def handle_ai_chat(m):
-        stats = data.get("stats_db")
-        if stats and stats["is_banned"](m.from_user.id): return
+        # Ambil fungsi is_banned lewat fungsi pembantu tadi
+        # Dan ingat, ID user WAJIB dibungkus str() agar tipenya cocok dengan JSON
+        stats_db = get_stats_db()
+    
+        if stats_db and stats_db.get("is_banned") and stats_db["is_banned"](str(m.from_user.id)): 
+            return  # Langsung cuekin user yang diban
+
         txt = m.text or ""
         low = txt.lower().strip()
-        if low.startswith("/") or low.startswith("."): return
+        if low.startswith("/") or low.startswith("."): 
+            return
 
         is_reply_to_bot = False
         if m.reply_to_message and m.reply_to_message.from_user:
             bot_info = await bot.get_me()
-            if m.reply_to_message.from_user.id == bot_info.id: is_reply_to_bot = True
+            if m.reply_to_message.from_user.id == bot_info.id: 
+               is_reply_to_bot = True
 
-        dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low or is_reply_to_bot
+            dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low or is_reply_to_bot
         if dipanggil:
             clean_prompt = txt.replace("cajel", "").replace(BOTNAME, "").strip()
-            if not clean_prompt: clean_prompt = "cajel"
+            if not clean_prompt: 
+                clean_prompt = "cajel"
+            
             await bot.send_chat_action(m.chat.id, 'typing')
             memory_id = m.chat.id if m.chat.type in ["group", "supergroup"] else m.from_user.id
             jawaban = await ask_gemini(memory_id, clean_prompt, m.from_user.first_name)
