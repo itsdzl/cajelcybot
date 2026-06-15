@@ -84,9 +84,7 @@ def setup(bot, data):
             dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low or is_reply_to_bot
         if dipanggil:
             clean_prompt = txt.replace("cajel", "").replace(BOTNAME, "").strip()
-            if not clean_prompt: 
-                clean_prompt = "cajel"
-            
+            if not clean_prompt: clean_prompt = "cajel"
             await bot.send_chat_action(m.chat.id, 'typing')
             memory_id = m.chat.id if m.chat.type in ["group", "supergroup"] else m.from_user.id
             jawaban = await ask_gemini(memory_id, clean_prompt, m.from_user.first_name)
