@@ -59,6 +59,8 @@ def setup(bot, data):
 
     @bot.message_handler(func=lambda m: True)
     async def handle_ai_chat(m):
+        stats = data.get("stats_db")
+        if stats and stats["is_banned"](m.from_user.id): return
         txt = m.text or ""
         low = txt.lower().strip()
         if low.startswith("/") or low.startswith("."): return
