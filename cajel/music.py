@@ -1,4 +1,5 @@
 import os, asyncio, subprocess, json, shutil
+from telebot import types
 
 def setup(bot, data):
     def download_youtube_audio(query):
@@ -79,7 +80,7 @@ def setup(bot, data):
             await bot.reply_to(m, "Masukin judul lagu atau penyanyinya juga dong Contoh: `/getmusic dumes` 😠")
             return
             
-        await bot.send_chat_action(m.chat.id, 'upload_voice')
+        await bot.send_chat_action(m.chat.id, 'typing')
         status_msg = await bot.reply_to(m, "sabar ya beb, cajel lagi cariin lagunya... 🎧")
         
         loop = asyncio.get_event_loop()
@@ -97,7 +98,7 @@ def setup(bot, data):
                     title=music_data["title"], 
                     performer=music_data["performer"], 
                     duration=music_data["duration"], 
-                    reply_to_message_id=m.message_id
+                    reply_parameters=types.ReplyParameters(message_id=m.message_id)  # <--- Format baru yang direkomendasikan
                 )
             
             # Hapus file lokal setelah sukses dikirim agar penyimpanan VPS Anda tidak penuh
