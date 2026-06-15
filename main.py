@@ -1,7 +1,7 @@
 import os, sys, asyncio, shutil, importlib, json
 import telebot
 from telebot.async_telebot import AsyncTeleBot
-import stats_db
+from cajel import stats_db  # Diubah agar mengambil dari folder cajel
 
 # 1. Membaca Konfigurasi Bot
 cfg = {}
@@ -14,7 +14,6 @@ with open("set", "r", encoding="utf8") as f:
 TOKEN = cfg["token"]
 BOTNAME = cfg["botname"]
 NAME = cfg.get("name", "cajel")
-# Menggunakan OWNER_ID dari file set, dipastikan integer
 OWNER_ID = int(cfg.get("OWNER_ID", 8278748114))
 LOG_GROUP_ID = int(cfg.get("log_group_id", -1004362941881))
 
@@ -24,12 +23,6 @@ if "GEMINI_API_KEY" in cfg:
     for key in cfg["GEMINI_API_KEY"].split(","):
         clean_key = key.strip()
         if clean_key: API_KEYS.append(clean_key)
-
-for i in range(2, 6):
-    key_name = f"GEMINI_API_KEY_{i}"
-    if key_name in cfg:
-        clean_key = cfg[key_name].strip()
-        if clean_key and clean_key not in API_KEYS: API_KEYS.append(clean_key)
 
 # 3. Memuat Data KBBI ke Memori
 KBBI_DATA = {}
@@ -54,20 +47,11 @@ shared_data = {
         "get_summary": stats_db.get_summary
     },
     "api_keys": API_KEYS,
-    "kbbi_data": KBBI_DATA, # Data KBBI sekarang tersedia di sini!
+    "kbbi_data": KBBI_DATA,
     "whisper_data": {},
     "chat_memories": {},
     "max_memory_length": 12
 }
-
-# (Bagian ytdlp dan log tetap sama)
-try:
-    import yt_dlp
-    shared_data["ytdlp_import"] = True
-except ImportError:
-    shared_data["ytdlp_import"] = False
-shared_data["ytdlp_cli"] = shutil.which("yt-dlp") is not None
-shared_data["ytdlp_available"] = shared_data["ytdlp_import"] or shared_data["ytdlp_cli"]
 
 async def send_bot_log(text):
     if shared_data["log_group_id"] != 0:
@@ -84,17 +68,6 @@ def load_plugins():
     if not os.path.exists(plugin_folder): os.makedirs(plugin_folder)
     
     all_files = sorted(os.listdir(plugin_folder))
-    prioritas_db = ["games_db.py", "stats_db.py"]
-    for db_file in prioritas_db:
-        if db_file in all_files:
-            all_files.remove(db_file)
-            all_files.insert(0, db_file)
-
-        if "ai_chat.py" in all_files:
-            all_files.remove("ai_chat.py")
-            all_files.append("ai_chat.py")
-
-
     for filename in all_files:
         if filename.endswith(".py") and filename != "__init__.py":
             module_name = f"{plugin_folder}.{filename[:-3]}"
@@ -113,4 +86,4 @@ async def startup():
 
 if __name__ == "__main__":
     asyncio.run(startup())
-        
+    
