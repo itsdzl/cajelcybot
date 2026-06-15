@@ -120,10 +120,11 @@ def setup(bot, data):
         if stats_db and stats_db.get("is_banned") and stats_db["is_banned"](str(m.from_user.id)): 
             return
             
-        if m.chat.id in game_sessions:stats_db = get_stats_db()
+        if m.chat.id in game_sessions:
             del game_sessions[m.chat.id]
             await bot.reply_to(m, "Permainan dihentikan. Tekan /game kalo mau main lagi.")
-        else: await bot.reply_to(m, "Tidak ada game.")
+        else: 
+            await bot.reply_to(m, "Tidak ada game.")
 
     @bot.callback_query_handler(func=lambda call: call.data.startswith("game_"))
     async def callback_handler(call):
