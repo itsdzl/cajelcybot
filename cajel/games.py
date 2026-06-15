@@ -119,6 +119,7 @@ def setup(bot, data):
         stats_db = get_stats_db()
         if stats_db and stats_db.get("is_banned") and stats_db["is_banned"](str(m.from_user.id)): 
             return
+            
         if m.chat.id in game_sessions:stats_db = get_stats_db()
             del game_sessions[m.chat.id]
             await bot.reply_to(m, "Permainan dihentikan. Tekan /game kalo mau main lagi.")
