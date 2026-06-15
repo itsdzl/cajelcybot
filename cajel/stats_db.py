@@ -1,7 +1,7 @@
 import os
 import json
 
-STATS_FILE = "stats.json"
+STATS_FILE = "users.json"
 
 def load_stats():
     if os.path.exists(STATS_FILE):
