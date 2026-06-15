@@ -5,8 +5,14 @@ def setup(bot, data):
     OWNER_ID = data["owner_id"]
     BOTNAME = data["botname"]
 
+    def get_stats_db():
+        return data.get("stats_db", {})
+            
     @bot.message_handler(commands=['start'])
     async def send_welcome(m):
+        stats_db = get_stats_db()
+        if stats_db and stats_db.get("is_banned") and stats_db["is_banned"](str(m.from_user.id)): 
+            return
         user_name = m.from_user.first_name
         
         # Panggil database menggunakan fungsi yang terdaftar di main.py
@@ -39,6 +45,9 @@ def setup(bot, data):
 
     @bot.message_handler(commands=['help'])
     async def help_menu(m):
+        stats_db = get_stats_db()
+        if stats_db and stats_db.get("is_banned") and stats_db["is_banned"](str(m.from_user.id)): 
+            return
         help_text = (
             f"✨ *PANDUAN PERINTAH BOT* ✨\n\n"
             f"• Panggil `cajel` atau reply chat-ku untuk mengobrol.\n"
@@ -59,10 +68,16 @@ def setup(bot, data):
 
     @bot.message_handler(commands=['info'])
     async def info_bot(m):
+        stats_db = get_stats_db()
+        if stats_db and stats_db.get("is_banned") and stats_db["is_banned"](str(m.from_user.id)): 
+            return
         await bot.reply_to(m, f"""🤖 *Bot Info*\n• Name: {NAME}\n• Your ID: `{m.from_user.id}`\n• Chat ID: `{m.chat.id}`\n• Status: Online""", parse_mode="Markdown")
 
     @bot.message_handler(commands=['mock'])
     async def mock_text(m):
+        stats_db = get_stats_db()
+        if stats_db and stats_db.get("is_banned") and stats_db["is_banned"](str(m.from_user.id)): 
+            return
         target_text = m.text.replace("/mock", "").strip()
         if not target_text and m.reply_to_message: target_text = m.reply_to_message.text or ""
         if target_text:
