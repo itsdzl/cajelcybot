@@ -77,7 +77,7 @@ def setup(bot, data):
         
         try:
             stats = get_stats_db()
-            users = stats"get_all_users"
+            users = stats["get_all_users"]()
             
             count = 0
 
