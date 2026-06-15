@@ -44,7 +44,7 @@ shared_data = {
     "log_group_id": LOG_GROUP_ID,
     "stats_db": {
         "update_chat": stats_db.update_chat_data,
-        "get_summary": stats_db.get_summary
+        "get_summary": stats_db.get_summary,
         "get_all_users": stats_db.get_all_users,
         "ban_user": stats_db.ban_user,
         "unban_user": stats_db.unban_user,
