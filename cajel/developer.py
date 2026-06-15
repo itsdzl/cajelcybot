@@ -76,12 +76,10 @@ def setup(bot, data):
             return
         
         try:
-            # Membaca file stats.json secara langsung untuk broadcast
-            with open("stats.json", "r", encoding="utf-8") as f:
-                stats_data = json.load(f)
-            
+            stats = get_stats_db()users = stats"get_all_users"
             count = 0
-            for chat_id in stats_data.keys():
+
+            for chat_id in users.keys():
                 try:
                     await bot.send_message(chat_id, f"📢 **Broadcast:**\n\n{msg}", parse_mode="Markdown")
                     count += 1
