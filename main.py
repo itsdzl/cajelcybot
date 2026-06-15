@@ -45,6 +45,11 @@ shared_data = {
     "stats_db": {
         "update_chat": stats_db.update_chat_data,
         "get_summary": stats_db.get_summary
+        "get_all_users": stats_db.get_all_users,
+        "ban_user": stats_db.ban_user,
+        "unban_user": stats_db.unban_user,
+        "is_banned": stats_db.is_banned,
+        "get_banlist": stats_db.get_banlist,
     },
     "api_keys": API_KEYS,
     "kbbi_data": KBBI_DATA,
