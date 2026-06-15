@@ -5,9 +5,6 @@ import json
 from telebot import types
 
 game_sessions = {}
-
-def get_stats_db():
-        return data.get("stats_db", {})
     
 def get_words(data, length=5):
     kbbi_raw = data.get("kbbi_data", {})
@@ -49,7 +46,10 @@ def get_soal_text(mode, word):
 def setup(bot, data):
     db = data["games_db"]
     OWNER_ID = data.get("owner_id") 
-
+        
+    def get_stats_db():
+        return data.get("stats_db", {})
+            
     @bot.message_handler(commands=['game'])
     async def game_menu(m):
         stats_db = get_stats_db()
