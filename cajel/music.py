@@ -15,9 +15,15 @@ def setup(bot, data):
             return None, "File musik tidak ditemukan."
         except Exception as e: 
             return None, str(e)
+            
+    def get_stats_db():
+        return data.get("stats_db", {})
 
     @bot.message_handler(commands=['getmusic'])
     async def get_music(m):
+        stats_db = get_stats_db()
+        if stats_db and stats_db.get("is_banned") and stats_db["is_banned"](str(m.from_user.id)): 
+            return
         query = m.text.replace("/getmusic", "").strip()
         if not query:
             await bot.reply_to(m, "Masukin judul lagu atau penyanyinya juga dong Contoh: `/getmusic dumes` 😠")
