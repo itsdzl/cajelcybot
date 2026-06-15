@@ -4,28 +4,16 @@ def setup(bot, data):
     NAME = data["name"]
     OWNER_ID = data["owner_id"]
     BOTNAME = data["botname"]
-    LOG_GROUP_ID = data.get("log_group_id")
-
-    # 1. Definisikan fungsi send_log agar bisa dipanggil sebagai data["send_log"]
-    async def send_log(msg):
-        if LOG_GROUP_ID:
-            try:
-                await bot.send_message(LOG_GROUP_ID, msg, parse_mode="Markdown")
-            except Exception as e:
-                print(f"Gagal kirim log ke grup: {e}")
-    
-    # Masukkan fungsi ke dalam dictionary data
-    data["send_log"] = send_log
 
     @bot.message_handler(commands=['start'])
     async def send_welcome(m):
         user_name = m.from_user.first_name
         
-        # 2. Panggil fungsi database untuk mencatat user baru
+        # Panggil database menggunakan fungsi yang terdaftar di main.py
         data["stats_db"]["update_chat"](m.chat.id, m.chat.type, user_name)
         
         if m.chat.type == "private":
-            # Kirim log ke grup
+            # Menggunakan fungsi send_log yang sudah terpusat di main.py
             await data["send_log"](f"👤 *[USER BARU]* Seseorang memulai bot di PC!\n• *Nama:* {user_name}\n• *ID:* `{m.from_user.id}`")
             
             welcome_message = (
@@ -40,15 +28,14 @@ def setup(bot, data):
     @bot.my_chat_member_handler()
     async def handle_bot_added(update):
         if update.new_chat_member.status == "member" and update.old_chat_member.status in ["left", "kicked"]:
-            # 3. Panggil fungsi database untuk mencatat grup baru
+            # Panggil database
             data["stats_db"]["update_chat"](update.chat.id, update.chat.type, update.chat.title)
             
-            # Kirim log ke grup
+            # Menggunakan fungsi send_log yang sudah terpusat di main.py
             await data["send_log"](f"📥 *[BOT MASUK GRUP BARU]*\n• *Grup:* {update.chat.title}\n• *ID:* `{update.chat.id}`")
             
             welcome = f"🎉 *HALO SEMUANYA! CAJEL DATANG!!* 🤪🤙\n\nAku bot lucu imut dan menggemaskan se telegram raya! jadiin cajel admin dulu biar bisa pake semua fitur yaa...\npanggil aku ketik `cajel` untuk ngobrol atau /help untuk melihat fitur fitur cajel."
             await bot.send_message(update.chat.id, welcome, parse_mode="Markdown")
-)
 
     @bot.message_handler(commands=['help'])
     async def help_menu(m):
