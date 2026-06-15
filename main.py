@@ -15,7 +15,7 @@ BOTNAME = cfg["botname"]
 NAME = cfg.get("name", "cajel")
 # Menggunakan OWNER_ID dari file set, dipastikan integer
 OWNER_ID = int(cfg.get("OWNER_ID", 8278748114))
-LOG_GROUP_ID = int(cfg.get("log_group_id", 0))
+LOG_GROUP_ID = int(cfg.get("log_group_id", -1004362941881))
 
 # 2. Mengumpulkan API Keys
 API_KEYS = []
