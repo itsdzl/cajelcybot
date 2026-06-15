@@ -48,6 +48,10 @@ shared_data = {
     "name": NAME,
     "owner_id": OWNER_ID,
     "log_group_id": LOG_GROUP_ID,
+    "stats_db": {
+        "update_chat": stats_db.update_chat_data,
+        "get_summary": stats_db.get_summary
+    },
     "api_keys": API_KEYS,
     "kbbi_data": KBBI_DATA, # Data KBBI sekarang tersedia di sini!
     "whisper_data": {},
