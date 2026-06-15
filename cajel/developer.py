@@ -119,17 +119,17 @@ def setup(bot, data):
 
 
     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".unban "))
-async def unban_user_cmd(m):
-    if m.from_user.id != OWNER_ID:
-        return
+    async def unban_user_cmd(m):
+        if m.from_user.id != OWNER_ID:
+            return
 
-    try:
-        user_id = int(m.text.split()[1])
+        try:
+            user_id = int(m.text.split()[1])
 
-        if get_stats_db()["unban_user"](user_id):
-            await bot.reply_to(m, f"✅ User {user_id} di-unban.")
-        else:
-            await bot.reply_to(m, "❌ User tidak ditemukan.")
+            if get_stats_db()["unban_user"](user_id):
+                await bot.reply_to(m, f"✅ User {user_id} di-unban.")
+            else:
+                await bot.reply_to(m, "❌ User tidak ditemukan.")
         except:
             await bot.reply_to(m, "⚠️ Format: .unban <user_id>")
 
