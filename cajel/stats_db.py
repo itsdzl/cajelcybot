@@ -24,10 +24,9 @@ def update_chat_data(chat_id, chat_type, name):
     }
     save_stats(db)
 
-def get_stats_summary():
+def get_summary():
     db = load_stats()
     total = len(db)
     private = sum(1 for v in db.values() if v.get("type") == "private")
     groups = sum(1 for v in db.values() if v.get("type") in ["group", "supergroup"])
     return {"total": total, "private": private, "groups": groups}
-    
