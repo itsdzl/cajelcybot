@@ -81,7 +81,7 @@ def setup(bot, data):
             if m.reply_to_message.from_user.id == bot_info.id: 
                is_reply_to_bot = True
 
-            dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low or is_reply_to_bot
+        dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low or is_reply_to_bot
         if dipanggil:
             clean_prompt = txt.replace("cajel", "").replace(BOTNAME, "").strip()
             if not clean_prompt: clean_prompt = "cajel"
