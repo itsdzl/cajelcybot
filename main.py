@@ -85,6 +85,7 @@ shared_data = {
         "queue": [],
         "messages": {}
     }
+}
 
 try:
     import yt_dlp
