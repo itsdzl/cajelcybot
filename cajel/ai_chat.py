@@ -71,11 +71,32 @@ def setup(bot, data):
         save_user_memory(user_memory)
 
 
-    async def ask_gemini(chat_id, prompt, user_name="User"):
+    async def ask_gemini(chat_id, user_id, prompt, user_name="User"):
         if not API_KEYS: return "agi ucak"
-        if chat_id not in chat_memories: chat_memories[chat_id] = []
+		memory_key = f"{chat_id}:{user_id}"
 
-        is_memory_limit_near = (len(chat_memories[chat_id]) >= MAX_MEMORY_LENGTH - 2)
+        if memory_key not in chat_memories:
+            chat_memories[memory_key] = []
+        if chat_id not in chat_memories: chat_memories[memory_key] = []
+
+        is_memory_limit_near = (len(chat_memories[memory_key]) >= MAX_MEMORY_LENGTH - 2)
+
+        uid = str(user_id)
+
+        memory_context = ""
+
+        if uid in user_memory:
+
+            memory_context += (
+                "\n\nINGATAN TENTANG USER:\n"
+            )
+
+            for k, v in user_memory[uid].items():
+
+                memory_context += (
+                    f"{k}: {v}\n"
+	    	)
+		
         system_instruction = (
         f"Kamu adalah {NAME}, bot Telegram paling lucu se-Telegram, imut, tapi tingkahnya agak menyebalkan, "
         f"tengil, suka mengejek dengan candaan, tapi tetap menggemaskan. Kamu sedang mengobrol dengan {user_name}.\n\n"
@@ -91,18 +112,19 @@ def setup(bot, data):
         f"Jika ada yang bertanya tentang pembuat/pencipta/owner-mu, puji aa ijel setinggi langit dengan heboh!"
         )
         if is_memory_limit_near:
+			system_instruction += memory_context
             system_instruction += "[PERINTAH SISTEM TAMBAHAN]: Sesi obrolan penuh. Wajib beritahu user di akhir obrolan secara halus untuk reset memori dan beri semangat untuknya jika suasana memang sedih atau galau, pamit juga ya kamu nya."
         else:
             system_instruction += "PENCIPTA: Kamu diciptakan oleh aa ijel yang ganteng, imut, dan lucu banget tiada tanding!"
 
-        chat_memories[chat_id].append({"role": "user", "parts": [{"text": prompt}]})
-        if len(chat_memories[chat_id]) > MAX_MEMORY_LENGTH:
-            chat_memories[chat_id] = chat_memories[chat_id][-MAX_MEMORY_LENGTH:]
+        chat_memories[memory_key].append({"role": "user", "parts": [{"text": prompt}]})
+        if len(chat_memories[memory_key]) > MAX_MEMORY_LENGTH:
+            chat_memories[memory_key] = chat_memories[memory_key][-MAX_MEMORY_LENGTH:]
 
         for idx, current_key in enumerate(API_KEYS):
             url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
             headers = {"Content-Type": "application/json", "x-goog-api-key": current_key}
-            payload = {"contents": chat_memories[chat_id], "system_instruction": {"parts": [{"text": system_instruction}]}}
+            payload = {"contents": chat_memories[memory_key], "system_instruction": {"parts": [{"text": system_instruction}]}}
             
             try:
                 async with aiohttp.ClientSession() as session:
@@ -110,17 +132,53 @@ def setup(bot, data):
                         if response.status == 200:
                             res_json = await response.json()
                             bot_reply = res_json['candidates'][0]['content']['parts'][0]['text']
-                            chat_memories[chat_id].append({"role": "model", "parts": [{"text": bot_reply}]})
-                            if is_memory_limit_near: chat_memories[chat_id] = []
+                            chat_memories[memory_key].append({"role": "model", "parts": [{"text": bot_reply}]})
+                            if is_memory_limit_near: chat_memories[memory_key] = []
                             return bot_reply
                         else:
                             await data["send_log"](f"⚠️ *[ROTASI]* API Key {idx+1} bermasalah (Status {response.status}). Mengalihkan...")
             except Exception as e:
                 await data["send_log"](f"🔌 *[ROTASI]* Koneksi Timeout pada Key {idx+1}: `{str(e)}`")
         
-        if chat_memories[chat_id]: chat_memories[chat_id].pop()
+        if chat_memories[memory_key]: chat_memories[memory_key].pop()
         return "AI cajel lagi off 🥹, tapi nanti balik lagii kok.. hiksrot"
 
+    @bot.message_handler(commands=["memory"])
+    async def memory_cmd(m):
+
+        uid = str(m.from_user.id)
+
+        if uid not in user_memory:
+
+            await bot.reply_to(
+                m,
+                "cajel belum inget apa-apa tentang kamu..."
+            )
+            return
+
+        txt = (
+            "yang cajel inget tentang kamu:\n\n"
+        )
+
+        for k, v in user_memory[uid].items():
+            txt += f"{k}: {v}\n"
+
+        await bot.reply_to(m, txt)
+
+	@bot.message_handler(commands=["forget"])
+    async def forget_cmd(m):
+
+        uid = str(m.from_user.id)
+
+        user_memory.pop(uid, None)
+
+        save_user_memory(user_memory)
+
+        await bot.reply_to(
+            m,
+            "okee, cajel lupa semuanya..."
+    	)
+	
     @bot.message_handler(func=lambda m: True)
     async def handle_ai_chat(m):
         # Ambil fungsi is_banned lewat fungsi pembantu tadi
@@ -144,9 +202,10 @@ def setup(bot, data):
         dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low or is_reply_to_bot
         if dipanggil:
             clean_prompt = txt.replace("cajel", "").replace(BOTNAME, "").strip()
+			update_long_memory(m.from_user.id, clean_prompt)
             if not clean_prompt: clean_prompt = "cajel"
             await bot.send_chat_action(m.chat.id, 'typing')
             memory_id = m.chat.id if m.chat.type in ["group", "supergroup"] else m.from_user.id
-            jawaban = await ask_gemini(memory_id, clean_prompt, m.from_user.first_name)
+            jawaban = await ask_gemini(memory_id, m.from_user.id, clean_prompt, m.from_user.first_name)
             await bot.reply_to(m, jawaban)
               
