@@ -22,6 +22,11 @@ def save_json(path, data):
 
 
 def setup(bot, data):
+    # Mengambil atau membuat penampung data jika belum ada
+    if "anonymous_data" not in data:
+        data["anonymous_data"] = {}
+    if "anonymous_active" not in data:
+        data["anonymous_active"] = {}
 
     anon_data = data["anonymous_data"]
 
@@ -55,7 +60,6 @@ def setup(bot, data):
 
     @bot.message_handler(commands=["searchanon"])
     async def searchanon(m):
-
         if m.chat.type not in ["group", "supergroup"]:
             return
 
@@ -120,16 +124,14 @@ def setup(bot, data):
 
         save_all()
      
-     @bot.message_handler(commands=["stopanon"])
+    @bot.message_handler(commands=["stopanon"])
     async def stopanon(m):
-
         if m.chat.type not in ["group", "supergroup"]:
             return
 
         chat_id = str(m.chat.id)
 
         if chat_id in queue:
-
             queue.remove(chat_id)
             save_all()
 
@@ -140,7 +142,6 @@ def setup(bot, data):
             return
 
         if chat_id not in rooms:
-
             await bot.reply_to(
                 m,
                 "lah emang lagi ga punya partner 😠"
@@ -164,17 +165,14 @@ def setup(bot, data):
 
         await notify_disconnect(int(partner))
 
-
     @bot.message_handler(commands=["nextanon"])
     async def nextanon(m):
-
         if m.chat.type not in ["group", "supergroup"]:
             return
 
         chat_id = str(m.chat.id)
 
         if chat_id not in rooms:
-
             await bot.reply_to(
                 m,
                 "belum ada partner nih.\n\n/searchanon dulu ya."
@@ -203,39 +201,30 @@ def setup(bot, data):
             "cajel putusin dulu yang tadi.\n\nlagi nyari yang baru yaa..."
         )
 
-
     @bot.message_handler(commands=["anonstatus"])
     async def anonstatus(m):
-
         chat_id = str(m.chat.id)
 
         if chat_id in rooms:
-
             await bot.reply_to(
                 m,
                 "masih nyambung sama partner anon.\n\n"
                 "/nextanon\n"
                 "/stopanon"
             )
-
         elif chat_id in queue:
-
             await bot.reply_to(
                 m,
                 "lagi nunggu partner nih."
             )
-
         else:
-
             await bot.reply_to(
                 m,
                 "grup ini lagi jomblo.\n\n/searchanon dulu yuk."
             )
 
-
     @bot.message_handler(commands=["anonhelp"])
     async def anonhelp(m):
-
         await bot.reply_to(
             m,
             "cara pakai anonymous:\n\n"
@@ -246,9 +235,9 @@ def setup(bot, data):
             "/nextanon\n"
             "/stopanon\n"
             "/anonstatus"
-)
+        )
 
- @bot.message_handler(
+    @bot.message_handler(
         func=lambda m: (
             m.chat.type in ["group", "supergroup"]
             and not (m.text and m.text.startswith("/"))
@@ -256,7 +245,6 @@ def setup(bot, data):
         content_types=["text"]
     )
     async def anonymous_reply(m):
-
         if getattr(m.from_user, "is_bot", False):
             return
 
@@ -279,7 +267,6 @@ def setup(bot, data):
             return
 
         try:
-
             sent = await bot.send_message(
                 int(partner),
                 "[ANON]\n\n"
@@ -290,12 +277,9 @@ def setup(bot, data):
             messages[f"{partner}:{sent.message_id}"] = True
 
             if len(messages) > 10000:
-
                 newest = {}
-
                 for k in list(messages.keys())[-3000:]:
                     newest[k] = True
-
                 messages.clear()
                 messages.update(newest)
 
