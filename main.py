@@ -78,14 +78,8 @@ shared_data = {
     "kbbi_data": KBBI_DATA,
     "whisper_data": {},
     "chat_memories": {},
-    "max_memory_length": 12,
-    "anonymous_active": {},
-    "anonymous_data": {
-        "rooms": {},
-        "queue": [],
-        "messages": {}
+    "max_memory_length": 12
     }
-}
 
 try:
     import yt_dlp
