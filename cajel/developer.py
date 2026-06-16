@@ -1,4 +1,8 @@
-import sys, os, asyncio, traceback, json, html, inspect
+import sys, os, traceback, json, inspect
+import asyncio
+import html
+import time
+from collections import deque
 
 def setup(bot, data):
     OWNER_ID = data["owner_id"]
@@ -214,12 +218,92 @@ def setup(bot, data):
             await bot.reply_to(m, f"⚠️ Error:\n<pre>{safe_err}</pre>", parse_mode="HTML")
 
     # 7. Execute Shell
+    import asyncio
+    import html
+    import time
+    from collections import deque
+
     @bot.message_handler(func=lambda m: m.text and m.text.startswith(".exe"))
     async def execute_shell(m):
-        if m.from_user.id != OWNER_ID: return
-        cmd = m.text.replace(".exe", "").strip()
-        proc = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-        stdout, stderr = await proc.communicate()
-        out = stdout.decode().strip() or stderr.decode().strip()
-        await bot.reply_to(m, f"📤 Output:\n<pre>{out[:3000]}</pre>", parse_mode="HTML")
-            
+        if m.from_user.id != OWNER_ID:
+            return
+
+        cmd = m.text[4:].strip()
+
+        if not cmd:
+            await bot.reply_to(m, "❌ Command kosong.")
+            return
+
+        msg = await bot.reply_to(
+            m,
+            f"⚙️ Executing:\n<code>{html.escape(cmd)}</code>",
+            parse_mode="HTML"
+        )
+
+        lines = deque(maxlen=25)
+        last_update = 0
+
+        try:
+            proc = await asyncio.create_subprocess_shell(
+                cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT
+            )
+
+            while True:
+                line = await proc.stdout.readline()
+
+                if not line:
+                    # Jika output kosong dan proses sudah selesai, keluar dari loop
+                    if proc.returncode is not None:
+                        break
+                    # Jika proses masih berjalan tapi belum ada output baru
+                    await asyncio.sleep(0.1)
+                    continue
+
+                text = line.decode(errors="ignore").rstrip()
+
+                if text:
+                    lines.append(text)
+
+                now = time.time()
+
+                if now - last_update >= 1:
+                    try:
+                        output = "\n".join(lines)
+                        if output.strip():
+                            await bot.edit_message_text(
+                                (
+                                    "⚙️ Running...\n"
+                                    "━━━━━━━━━━━━━━\n"
+                                    f"<pre>{html.escape(output)}</pre>"
+                                )[:4096],
+                                chat_id=msg.chat.id,
+                                message_id=msg.message_id,
+                                parse_mode="HTML"
+                            )
+                    except:
+                        pass
+                    last_update = now
+
+            exit_code = await proc.wait()
+            output = "\n".join(lines) if lines else "Tidak ada output."
+
+            await bot.edit_message_text(
+                (
+                    f"{'✅' if exit_code == 0 else '❌'} Exit Code: {exit_code}\n"
+                    "━━━━━━━━━━━━━━\n"
+                    f"<pre>{html.escape(output)}</pre>"
+                )[:4096],
+                chat_id=msg.chat.id,
+                message_id=msg.message_id,
+                parse_mode="HTML"
+            )
+
+        except Exception as e:
+            await bot.edit_message_text(
+                f"❌ Error\n<pre>{html.escape(str(e))}</pre>",
+                chat_id=msg.chat.id,
+                message_id=msg.message_id,
+                parse_mode="HTML"
+            )
