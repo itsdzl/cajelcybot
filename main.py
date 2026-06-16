@@ -79,7 +79,12 @@ shared_data = {
     "whisper_data": {},
     "chat_memories": {},
     "max_memory_length": 12
-}
+    "anonymous_active": {},
+    "anonymous_data": {
+        "rooms": {},
+        "queue": [],
+        "messages": {}
+    }
 
 try:
     import yt_dlp
