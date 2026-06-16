@@ -4,7 +4,7 @@ cd "$DIR"
 
 while true; do
     echo "🚀 Memulai bot..."
-    python3 main.py 2> error.log
+    python3.13 main.py 2> error.log
     echo "❌ Bot berhenti! Berikut adalah pesan error terakhir:"
     cat error.log
     echo "----------------------------------------------------"
