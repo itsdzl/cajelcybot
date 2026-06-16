@@ -14,7 +14,7 @@ def setup(bot, data):
     def get_stats_db():
         return data.get("stats_db", {})
 
-	def update_long_memory(user_id, text):
+    def update_long_memory(user_id, text):
 
         uid = str(user_id)
 
@@ -73,7 +73,7 @@ def setup(bot, data):
 
     async def ask_gemini(chat_id, user_id, prompt, user_name="User"):
         if not API_KEYS: return "agi ucak"
-		memory_key = f"{chat_id}:{user_id}"
+        memory_key = f"{chat_id}:{user_id}"
 
         if memory_key not in chat_memories:
             chat_memories[memory_key] = []
@@ -95,10 +95,10 @@ def setup(bot, data):
 
                 memory_context += (
                     f"{k}: {v}\n"
-	    	)
+                )
 		
         system_instruction = (
-        f"Kamu adalah {NAME}, bot Telegram paling lucu se-Telegram, imut, tapi tingkahnya agak menyebalkan, "
+        f"Kamu adalah {NAME}, bot Telegram paling lucu se-Telegram, kamu di desain menjadi bot sebagai perempuan yang imut, tapi tingkahnya agak menyebalkan, "
         f"tengil, suka mengejek dengan candaan, tapi tetap menggemaskan. Kamu sedang mengobrol dengan {user_name}.\n\n"
         f"ATURAN ADAPTIF KEPRIBADIAN (SANGAT PENTING):\n"
         f"1. Analisis muatan emosi dan maksud dari pesan {user_name}. Jika dia sedang ingin mengobrol serius, "
@@ -108,14 +108,15 @@ def setup(bot, data):
         f"3. Jangan membanjiri teks dengan pesan yang terlalu banyak emoji jika suasananya sedang formal atau sedih.\n"
         f"4. Jika topik curhat selesai atau obrolan kembali santai/gembira, kembalilah secara natural ke sifat aslimu yang "
         f"lucu, tengil, santai, ekspresif, suka pakai emoji khas (🤭, 😠, 😜, ☝️😋, 🥺, 🥰), dan menggunakan huruf kecil semua sesekali, tapi dengan balasan yang secukupnya ya, jangan selalu mengirim pesan yang panjang, itu akan membanjiri chat, secukupnya aja tapi tetap lucu dan menyebalkan tanpa bertele-tele.\n\n"
-        f"PENCIPTA: Kamu diciptakan oleh aa ijel yang ganteng, imut, dan lucu banget tiada tanding! "
-        f"Jika ada yang bertanya tentang pembuat/pencipta/owner-mu, puji aa ijel setinggi langit dengan heboh!"
+        f"PENCIPTA: Kamu diciptakan oleh aa ijel yang ganteng, imut, dan lucu banget "
+		f"meskipun kamu cewe, agak lebay dan menjengkelkan, tapi typing kamu itu typing ganteng, istilah ala ala jaman sekarang, tapi bukan typing ganteng jadi kek cowo ya, maksudnya itu cuma istilah aja, pasti kamu tau kan"
+        f"Jika ada yang bertanya tentang pembuat/pencipta/owner-mu, puji aa ijel "
         )
         if is_memory_limit_near:
-			system_instruction += memory_context
+            system_instruction += memory_context
             system_instruction += "[PERINTAH SISTEM TAMBAHAN]: Sesi obrolan penuh. Wajib beritahu user di akhir obrolan secara halus untuk reset memori dan beri semangat untuknya jika suasana memang sedih atau galau, pamit juga ya kamu nya."
         else:
-            system_instruction += "PENCIPTA: Kamu diciptakan oleh aa ijel yang ganteng, imut, dan lucu banget tiada tanding!"
+            system_instruction += "kamu jarang memanggil diri kamu sendiri dengan kata aku, lebih sering memanggil nama diri sendiri, misalkan, kalo {NAME} setuju sih hihi"
 
         chat_memories[memory_key].append({"role": "user", "parts": [{"text": prompt}]})
         if len(chat_memories[memory_key]) > MAX_MEMORY_LENGTH:
@@ -152,7 +153,7 @@ def setup(bot, data):
 
             await bot.reply_to(
                 m,
-                "cajel belum inget apa-apa tentang kamu..."
+                "cajel gatauu apa apa tentang kamu..."
             )
             return
 
@@ -165,7 +166,7 @@ def setup(bot, data):
 
         await bot.reply_to(m, txt)
 
-	@bot.message_handler(commands=["forget"])
+    @bot.message_handler(commands=["forget"])
     async def forget_cmd(m):
 
         uid = str(m.from_user.id)
@@ -176,8 +177,8 @@ def setup(bot, data):
 
         await bot.reply_to(
             m,
-            "okee, cajel lupa semuanya..."
-    	)
+            "ehh, cajel tbtb ga inget apa apa deh..."
+        )
 	
     @bot.message_handler(func=lambda m: True)
     async def handle_ai_chat(m):
@@ -202,10 +203,10 @@ def setup(bot, data):
         dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low or is_reply_to_bot
         if dipanggil:
             clean_prompt = txt.replace("cajel", "").replace(BOTNAME, "").strip()
-			update_long_memory(m.from_user.id, clean_prompt)
+            update_long_memory(m.from_user.id, clean_prompt)
             if not clean_prompt: clean_prompt = "cajel"
             await bot.send_chat_action(m.chat.id, 'typing')
             memory_id = m.chat.id if m.chat.type in ["group", "supergroup"] else m.from_user.id
             jawaban = await ask_gemini(memory_id, m.from_user.id, clean_prompt, m.from_user.first_name)
             await bot.reply_to(m, jawaban)
-              
+		
