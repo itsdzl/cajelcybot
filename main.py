@@ -96,7 +96,7 @@ shared_data = {
     "kbbi_data": KBBI_DATA,
     "whisper_data": {},
     "chat_memories": {},
-    "max_memory_length": 12,
+    "max_memory_length": 20,
     
     "user_memory": load_user_memory(),
     "save_user_memory": save_user_memory
