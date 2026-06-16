@@ -65,14 +65,7 @@ def setup(bot, data):
         # Ambil fungsi is_banned lewat fungsi pembantu tadi
         # Dan ingat, ID user WAJIB dibungkus str() agar tipenya cocok dengan JSON
         stats_db = get_stats_db()
-        anon_data = data.get("anonymous_data", {})
-
-        if data.get("anonymous_active", {}).get(str(m.chat.id)):
-            return
-
-        if str(m.chat.id) in anon_data.get("rooms", {}):
-            return
-    
+        
         if stats_db and stats_db.get("is_banned") and stats_db["is_banned"](str(m.from_user.id)): 
             return  # Langsung cuekin user yang diban
 
