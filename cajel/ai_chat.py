@@ -1,4 +1,6 @@
-import asyncio, aiohttp
+import asyncio
+import aiohttp
+import re
 
 def setup(bot, data):
     API_KEYS = data["api_keys"]
@@ -6,9 +8,68 @@ def setup(bot, data):
     MAX_MEMORY_LENGTH = data["max_memory_length"]
     NAME = data["name"]
     BOTNAME = data["botname"]
+    user_memory = data["user_memory"]
+    save_user_memory = data["save_user_memory"]
 
     def get_stats_db():
         return data.get("stats_db", {})
+
+	def update_long_memory(user_id, text):
+
+        uid = str(user_id)
+
+        if uid not in user_memory:
+            user_memory[uid] = {}
+
+        low = text.lower()
+
+        nama_patterns = [
+            r"nama aku (.+)",
+            r"nama saya (.+)",
+            r"aku bernama (.+)",
+            r"saya bernama (.+)"
+        ]
+
+        for p in nama_patterns:
+            m = re.search(p, low)
+            if m:
+                user_memory[uid]["name"] = (
+                    m.group(1).strip().title()
+                )
+
+        kota_patterns = [
+            r"aku tinggal di (.+)",
+            r"saya tinggal di (.+)"
+        ]
+
+        for p in kota_patterns:
+            m = re.search(p, low)
+            if m:
+                user_memory[uid]["city"] = (
+                    m.group(1).strip().title()
+                )
+
+        suka_patterns = [
+            r"aku suka (.+)",
+            r"saya suka (.+)"
+        ]
+
+        for p in suka_patterns:
+            m = re.search(p, low)
+
+            if not m:
+                continue
+
+            hobby = m.group(1).strip()
+
+            if "likes" not in user_memory[uid]:
+                user_memory[uid]["likes"] = []
+
+            if hobby not in user_memory[uid]["likes"]:
+                user_memory[uid]["likes"].append(hobby)
+
+        save_user_memory(user_memory)
+
 
     async def ask_gemini(chat_id, prompt, user_name="User"):
         if not API_KEYS: return "agi ucak"
