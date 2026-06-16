@@ -58,6 +58,24 @@ except Exception as e:
 # Inisialisasi bot asinkronus
 bot = AsyncTeleBot(TOKEN)
 
+USER_MEMORY_FILE = "user_memory.json"
+
+def load_user_memory():
+    try:
+        with open(USER_MEMORY_FILE, "r", encoding="utf8") as f:
+            return json.load(f)
+    except:
+        return {}
+
+def save_user_memory(memory):
+    with open(USER_MEMORY_FILE, "w", encoding="utf8") as f:
+        json.dump(
+            memory,
+            f,
+            ensure_ascii=False,
+            indent=4
+        )
+        
 # 4. Shared Data
 shared_data = {
     "cfg": cfg,
@@ -78,7 +96,10 @@ shared_data = {
     "kbbi_data": KBBI_DATA,
     "whisper_data": {},
     "chat_memories": {},
-    "max_memory_length": 12
+    "max_memory_length": 12,
+    
+    "user_memory": load_user_memory(),
+    "save_user_memory": save_user_memory
     }
 
 try:
