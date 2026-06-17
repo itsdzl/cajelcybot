@@ -2,7 +2,8 @@ import os, sys, asyncio, shutil, importlib, json, traceback
 import logging
 import telebot
 from telebot.async_telebot import AsyncTeleBot
-from cajel import stats_db  # Diubah agar mengambil dari folder cajel
+from cajel import stats_db
+from cajel import memory_ai_db
 
 # ==========================================
 # SYSTEM LOGGING CONFIGURATION
@@ -98,6 +99,15 @@ shared_data = {
     "chat_memories": {},
     "max_memory_length": 20,
     
+    "memory_ai": {
+        "get": memory_ai_db.get_user_memory,
+        "save": memory_ai_db.save_user_memory,
+        "profile": memory_ai_db.update_profile,
+        "fact": memory_ai_db.add_fact,
+        "summary": memory_ai_db.add_summary,
+        "clear": memory_ai_db.clear_memory,
+    },
+    
     "user_memory": load_user_memory(),
     "save_user_memory": save_user_memory
     }
@@ -125,7 +135,7 @@ def load_plugins():
     if not os.path.exists(plugin_folder): os.makedirs(plugin_folder)
     
     all_files = sorted(os.listdir(plugin_folder))
-    prioritas_db = ["games_db.py", "stats_db.py"]
+    prioritas_db = ["games_db.py", "stats_db.py", "memory_ai_db.py"]
     for db_file in prioritas_db:
         if db_file in all_files:
             all_files.remove(db_file)
