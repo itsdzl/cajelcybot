@@ -10,7 +10,7 @@ def setup(bot, data):
     BOTNAME = data["botname"]
     user_memory = data["user_memory"]
     save_user_memory = data["save_user_memory"]
-	memory_ai = data["memory_ai"]
+    memory_ai = data["memory_ai"]
 
     def get_stats_db():
         return data.get("stats_db", {})
