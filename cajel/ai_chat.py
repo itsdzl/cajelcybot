@@ -10,6 +10,7 @@ def setup(bot, data):
     BOTNAME = data["botname"]
     user_memory = data["user_memory"]
     save_user_memory = data["save_user_memory"]
+	memory_ai = data["memory_ai"]
 
     def get_stats_db():
         return data.get("stats_db", {})
@@ -34,18 +35,6 @@ def setup(bot, data):
             m = re.search(p, low)
             if m:
                 user_memory[uid]["name"] = (
-                    m.group(1).strip().title()
-                )
-
-        kota_patterns = [
-            r"aku tinggal di (.+)",
-            r"saya tinggal di (.+)"
-        ]
-
-        for p in kota_patterns:
-            m = re.search(p, low)
-            if m:
-                user_memory[uid]["city"] = (
                     m.group(1).strip().title()
                 )
 
@@ -77,7 +66,6 @@ def setup(bot, data):
 
         if memory_key not in chat_memories:
             chat_memories[memory_key] = []
-        if chat_id not in chat_memories: chat_memories[memory_key] = []
 
         is_memory_limit_near = (len(chat_memories[memory_key]) >= MAX_MEMORY_LENGTH - 2)
 
@@ -112,8 +100,10 @@ def setup(bot, data):
 		f"meskipun kamu cewe, agak lebay dan menjengkelkan, tapi typing kamu itu typing ganteng, istilah ala ala jaman sekarang, tapi bukan typing ganteng jadi kek cowo ya, maksudnya itu cuma istilah aja, pasti kamu tau kan"
         f"Jika ada yang bertanya tentang pembuat/pencipta/owner-mu, sebutin pencipta kamu itu aa ijel dengan ekspresif dan heboh"
         )
+		
+		system_instruction += memory_context
+		
         if is_memory_limit_near:
-            system_instruction += memory_context
             system_instruction += "[PERINTAH SISTEM TAMBAHAN]: Sesi obrolan penuh. Wajib beritahu user di akhir obrolan secara halus untuk reset memori dan beri semangat untuknya jika suasana memang sedih atau galau, pamit juga ya kamu nya."
         else:
             system_instruction += "kamu jarang memanggil diri kamu sendiri dengan kata aku, lebih sering memanggil nama diri sendiri, misalkan, kalo cajel setuju sih hihi"
@@ -202,6 +192,7 @@ def setup(bot, data):
 
         dipanggil = m.chat.type == "private" or "cajel" in low or BOTNAME.lower() in low or is_reply_to_bot
         if dipanggil:
+			memory_ai["profile"](m.from_user.id, m.from_user.first_name, m.from_user.username)
             clean_prompt = txt.replace("cajel", "").replace(BOTNAME, "").strip()
             update_long_memory(m.from_user.id, clean_prompt)
             if not clean_prompt: clean_prompt = "cajel"
