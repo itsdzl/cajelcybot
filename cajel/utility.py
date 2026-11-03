@@ -24,12 +24,12 @@ def setup(bot, data):
             
             welcome_message = (
                 f"👋 *Halo {user_name}!* Selamat datang di markas rahasia! ✨\n\n"
-                f"Kenalin, aku *{NAME}*, bot paling imut se telegram raya. 😜\n👑 Ciptaan mutlak *aa ijel yang ganteng dan imut tiada tara*.\n\n"
+                f"Kenalin, aku *{NAME}*, bot paling imut se telegram raya. 😜\n👑 Ciptaan mutlak *aa aksa yang ganteng dan imut tiada tara*.\n\n"
                 f"Ketik /help untuk melihat daftar perintah."
             )
             await bot.reply_to(m, welcome_message, parse_mode="Markdown")
         else:
-            await bot.reply_to(m, "Ngapain start-start di grup? PC sini kalau berani 😠")
+            await bot.reply_to(m, "Ngapain start-start? PC sini kalau berani 😠")
 
     @bot.my_chat_member_handler()
     async def handle_bot_added(update):
