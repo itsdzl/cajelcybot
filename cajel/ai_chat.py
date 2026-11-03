@@ -132,7 +132,7 @@ def setup(bot, data):
                 await data["send_log"](f"🔌 *[ROTASI]* Koneksi Timeout pada Key {idx+1}: `{str(e)}`")
 
         if chat_memories[memory_key]: chat_memories[memory_key].pop()
-        return "AI cajel lagi off 🥹, tapi nanti balik lagii kok.. hiksrot"
+        return "cajel lagi ga mut, nanti aja ngobrolnya"
 
     @bot.message_handler(commands=["memory"])
     async def memory_cmd(m):
